@@ -410,6 +410,7 @@ button:hover { background: var(--brand-dark); }
 
 .table-wrap {
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
@@ -502,10 +503,62 @@ svg {
   .grid-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .app {
+    padding: 16px;
+  }
+
+  .hero-actions {
+    width: 100%;
+  }
+
+  .hero-actions button {
+    flex: 1 1 180px;
+  }
+
+  .toolbar {
+    align-items: stretch;
+  }
+
+  .toolbar > label,
+  .toolbar > .search,
+  .toolbar > button,
+  .toolbar > .toolbar-actions,
+  .toolbar > .inline-input {
+    flex: 1 1 220px;
+  }
+
+  .toolbar-actions {
+    justify-content: flex-start;
+  }
+
+  .modal {
+    padding: 10px;
+  }
+
+  .modal-card {
+    max-height: 95vh;
+    padding: 12px;
+  }
+
+  .employee-row-actions {
+    min-width: 220px;
+    white-space: normal;
+  }
+
+  table {
+    min-width: 1120px;
+  }
 }
 
 @media (max-width: 640px) {
-  .app { padding: 14px; }
+  .app {
+    padding: 12px;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
 
   .auth-grid,
   .company-grid,
@@ -517,6 +570,86 @@ svg {
   .brand-row {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .hero h1 {
+    font-size: 1.6rem;
+  }
+
+  .header-logo {
+    width: 110px;
+    height: 50px;
+  }
+
+  .panel {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px;
+  }
+
+  button {
+    min-height: 42px;
+  }
+
+  .toolbar,
+  .actions,
+  .hero-actions {
+    gap: 8px;
+  }
+
+  .toolbar > label,
+  .toolbar > .search,
+  .toolbar > button,
+  .toolbar > .toolbar-actions,
+  .toolbar > .inline-input,
+  .actions > button,
+  .hero-actions > button {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .inline-input {
+    flex-wrap: wrap;
+  }
+
+  .inline-input > * {
+    width: 100%;
+  }
+
+  .login-logos img {
+    width: 140px;
+    height: 52px;
+  }
+
+  .table-wrap {
+    margin-top: 4px;
+    border-radius: 10px;
+  }
+
+  table {
+    min-width: 920px;
+  }
+
+  th,
+  td {
+    padding: 8px 7px;
+  }
+
+  .row-actions button,
+  .employee-row-actions button {
+    font-size: 0.8rem;
+    padding: 7px 9px;
+  }
+
+  .barcode-preview {
+    padding: 8px;
+    min-height: 110px;
   }
 
 }
