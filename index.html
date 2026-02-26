@@ -117,6 +117,26 @@
           <button type="button" id="restore-backup-file" class="secondary">Restore Backup</button>
         </div>
         <div class="toolbar settings-row">
+          <label class="search">Supabase Project URL
+            <input id="cloud-url" type="text" placeholder="https://xxxx.supabase.co" />
+          </label>
+          <label class="search">Supabase Anon Key
+            <input id="cloud-anon-key" type="password" placeholder="eyJ..." />
+          </label>
+          <label>Cloud App ID
+            <input id="cloud-app-id" type="text" value="it-asset-tracker" maxlength="80" />
+          </label>
+        </div>
+        <div class="toolbar settings-row">
+          <label class="toggle-wrap">
+            <input id="cloud-auto-sync" type="checkbox" />
+            Enable Cloud Auto Sync
+          </label>
+          <button type="button" id="cloud-save-config" class="secondary">Save Cloud Config</button>
+          <button type="button" id="cloud-push-now" class="secondary">Push To Cloud</button>
+          <button type="button" id="cloud-pull-now" class="secondary">Pull From Cloud</button>
+        </div>
+        <div class="toolbar settings-row">
           <label>Company Name
             <input id="new-company-name" type="text" maxlength="60" placeholder="e.g. NewCompany" />
           </label>

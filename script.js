@@ -28,6 +28,8 @@ const BACKUP_KEY = "it_backups_v1";
 const BACKUP_DATE_KEY = "it_backup_last_date";
 const FULL_BACKUP_SNAPSHOT_KEY = "it_full_backup_snapshot_v1";
 const FULL_BACKUP_SNAPSHOT_AT_KEY = "it_full_backup_snapshot_at_v1";
+const CLOUD_SYNC_CONFIG_KEY = "it_cloud_sync_config_v1";
+const CLOUD_LAST_REMOTE_AT_KEY = "it_cloud_last_remote_at_v1";
 const TRACKED_BACKUP_KEYS = new Set([
   STORAGE_KEY,
   USERS_KEY,
@@ -150,6 +152,13 @@ const saveFolderNowBtn = document.getElementById("save-folder-now");
 const saveFolderLabel = document.getElementById("save-folder-label");
 const uploadBackupFileInput = document.getElementById("upload-backup-file");
 const restoreBackupFileBtn = document.getElementById("restore-backup-file");
+const cloudUrlInput = document.getElementById("cloud-url");
+const cloudAnonKeyInput = document.getElementById("cloud-anon-key");
+const cloudAppIdInput = document.getElementById("cloud-app-id");
+const cloudAutoSyncInput = document.getElementById("cloud-auto-sync");
+const cloudSaveConfigBtn = document.getElementById("cloud-save-config");
+const cloudPushNowBtn = document.getElementById("cloud-push-now");
+const cloudPullNowBtn = document.getElementById("cloud-pull-now");
 const adminSettingsStatus = document.getElementById("admin-settings-status");
 const newCompanyNameInput = document.getElementById("new-company-name");
 const newCompanyPrefixInput = document.getElementById("new-company-prefix");
@@ -666,6 +675,13 @@ let saveFolderWriteTimer = null;
 let saveFolderWriteInFlight = false;
 let saveFolderQueuedReason = "";
 let listPageSizes = {};
+let cloudSyncConfig = { url: "", anonKey: "", appId: "it-asset-tracker", autoSync: false };
+let cloudLastRemoteAt = "";
+let cloudPushTimer = null;
+let cloudPushInFlight = false;
+let cloudPullInFlight = false;
+let cloudSyncSuspendLocalHooks = false;
+let cloudPullInterval = null;
 const AUDIT_YN_OPTIONS = ["", "Y", "N"];
 const AUDIT_RISK_OPTIONS = ["Low", "Medium", "High", "Critical"];
 const LIST_PAGE_SIZE_TARGETS = new Set([
@@ -939,6 +955,7 @@ function saveJson(key, value) {
   if (TRACKED_BACKUP_KEYS.has(key)) {
     persistLiveBackupSnapshot(`save:${key}`);
     scheduleSaveFolderWrite(`save:${key}`);
+    scheduleCloudPush(`save:${key}`);
   }
 }
 
@@ -1041,6 +1058,162 @@ function loadJson(key, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function normalizeCloudSyncConfig(raw = {}) {
+  const url = String(raw.url || "").trim().replace(/\/+$/, "");
+  const anonKey = String(raw.anonKey || "").trim();
+  const appId = String(raw.appId || "it-asset-tracker").trim() || "it-asset-tracker";
+  const autoSync = !!raw.autoSync;
+  return { url, anonKey, appId, autoSync };
+}
+
+function loadCloudSyncConfig() {
+  cloudSyncConfig = normalizeCloudSyncConfig(loadJson(CLOUD_SYNC_CONFIG_KEY, {}));
+  cloudLastRemoteAt = String(localStorage.getItem(CLOUD_LAST_REMOTE_AT_KEY) || "");
+}
+
+function saveCloudSyncConfig() {
+  cloudSyncConfig = normalizeCloudSyncConfig({
+    url: cloudUrlInput ? cloudUrlInput.value : cloudSyncConfig.url,
+    anonKey: cloudAnonKeyInput ? cloudAnonKeyInput.value : cloudSyncConfig.anonKey,
+    appId: cloudAppIdInput ? cloudAppIdInput.value : cloudSyncConfig.appId,
+    autoSync: !!cloudAutoSyncInput?.checked
+  });
+  saveJson(CLOUD_SYNC_CONFIG_KEY, cloudSyncConfig);
+  refreshCloudSyncForm();
+}
+
+function refreshCloudSyncForm() {
+  if (cloudUrlInput) cloudUrlInput.value = cloudSyncConfig.url || "";
+  if (cloudAnonKeyInput) cloudAnonKeyInput.value = cloudSyncConfig.anonKey || "";
+  if (cloudAppIdInput) cloudAppIdInput.value = cloudSyncConfig.appId || "it-asset-tracker";
+  if (cloudAutoSyncInput) cloudAutoSyncInput.checked = !!cloudSyncConfig.autoSync;
+}
+
+function isCloudSyncConfigured() {
+  return !!(cloudSyncConfig.url && cloudSyncConfig.anonKey && cloudSyncConfig.appId);
+}
+
+function getCloudStateApiUrl() {
+  const base = `${cloudSyncConfig.url}/rest/v1/app_state`;
+  const params = new URLSearchParams();
+  params.set("app_id", `eq.${cloudSyncConfig.appId}`);
+  params.set("select", "app_id,payload,updated_at,updated_by");
+  params.set("limit", "1");
+  return `${base}?${params.toString()}`;
+}
+
+function getCloudUpsertApiUrl() {
+  const base = `${cloudSyncConfig.url}/rest/v1/app_state`;
+  const params = new URLSearchParams();
+  params.set("on_conflict", "app_id");
+  return `${base}?${params.toString()}`;
+}
+
+function cloudHeaders(extra = {}) {
+  return {
+    apikey: cloudSyncConfig.anonKey,
+    Authorization: `Bearer ${cloudSyncConfig.anonKey}`,
+    "Content-Type": "application/json",
+    ...extra
+  };
+}
+
+async function pushCloudState(reason = "manual") {
+  if (!isCloudSyncConfigured()) {
+    setStatus(adminSettingsStatus, "Cloud sync config missing. Save URL, key, and App ID first.", "err");
+    return false;
+  }
+  if (cloudPushInFlight) return false;
+  cloudPushInFlight = true;
+  try {
+    const now = new Date().toISOString();
+    const payload = buildFullBackupPayload(`cloud:${reason}`);
+    const body = [{
+      app_id: cloudSyncConfig.appId,
+      payload,
+      updated_at: now,
+      updated_by: sessionUser || "system"
+    }];
+    const response = await fetch(getCloudUpsertApiUrl(), {
+      method: "POST",
+      headers: cloudHeaders({
+        Prefer: "resolution=merge-duplicates,return=representation"
+      }),
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) {
+      const txt = await response.text();
+      throw new Error(`Cloud push failed (${response.status}): ${txt}`);
+    }
+    cloudLastRemoteAt = now;
+    localStorage.setItem(CLOUD_LAST_REMOTE_AT_KEY, cloudLastRemoteAt);
+    return true;
+  } catch (error) {
+    setStatus(adminSettingsStatus, error.message || "Cloud push failed.", "err");
+    return false;
+  } finally {
+    cloudPushInFlight = false;
+  }
+}
+
+async function pullCloudState(reason = "manual") {
+  if (!isCloudSyncConfigured()) {
+    setStatus(adminSettingsStatus, "Cloud sync config missing. Save URL, key, and App ID first.", "err");
+    return false;
+  }
+  if (cloudPullInFlight) return false;
+  cloudPullInFlight = true;
+  try {
+    const response = await fetch(getCloudStateApiUrl(), {
+      method: "GET",
+      headers: cloudHeaders()
+    });
+    if (!response.ok) {
+      const txt = await response.text();
+      throw new Error(`Cloud pull failed (${response.status}): ${txt}`);
+    }
+    const rows = await response.json();
+    const row = Array.isArray(rows) ? rows[0] : null;
+    if (!row || !row.payload || typeof row.payload !== "object") {
+      if (reason === "manual") setStatus(adminSettingsStatus, "No cloud state found for this App ID.", "err");
+      return false;
+    }
+    const remoteAt = String(row.updated_at || "");
+    if (reason !== "manual" && remoteAt && cloudLastRemoteAt && new Date(remoteAt).getTime() <= new Date(cloudLastRemoteAt).getTime()) {
+      return false;
+    }
+    cloudSyncSuspendLocalHooks = true;
+    applyBackupPayload(row.payload, { statusEl: null, successMessage: "", logReason: "" });
+    cloudSyncSuspendLocalHooks = false;
+    cloudLastRemoteAt = remoteAt || new Date().toISOString();
+    localStorage.setItem(CLOUD_LAST_REMOTE_AT_KEY, cloudLastRemoteAt);
+    if (reason === "manual") setStatus(adminSettingsStatus, "Cloud data pulled successfully.", "ok");
+    return true;
+  } catch (error) {
+    cloudSyncSuspendLocalHooks = false;
+    setStatus(adminSettingsStatus, error.message || "Cloud pull failed.", "err");
+    return false;
+  } finally {
+    cloudPullInFlight = false;
+  }
+}
+
+function scheduleCloudPush(reason = "auto") {
+  if (!cloudSyncConfig.autoSync || !isCloudSyncConfigured() || cloudSyncSuspendLocalHooks) return;
+  if (cloudPushTimer) clearTimeout(cloudPushTimer);
+  cloudPushTimer = setTimeout(() => {
+    void pushCloudState(reason);
+  }, 1200);
+}
+
+function startCloudAutoPull() {
+  if (cloudPullInterval) clearInterval(cloudPullInterval);
+  if (!cloudSyncConfig.autoSync || !isCloudSyncConfigured()) return;
+  cloudPullInterval = setInterval(() => {
+    void pullCloudState("auto");
+  }, 60000);
 }
 
 function logActivity(action, details = "", meta = {}) {
@@ -1539,6 +1712,7 @@ function seedDefaultAdmin() {
 }
 
 function loadState() {
+  loadCloudSyncConfig();
   loadCompanyMeta();
   loadCustomTypeAndStatusConfig();
   users = loadJson(USERS_KEY, []);
@@ -1636,6 +1810,7 @@ function hardResetAllData() {
     FULL_BACKUP_SNAPSHOT_KEY,
     FULL_BACKUP_SNAPSHOT_AT_KEY,
     LIST_PAGE_SIZE_KEY,
+    CLOUD_LAST_REMOTE_AT_KEY,
     SESSION_KEY,
     COMPANY_KEY,
     LOCATION_KEY,
@@ -1689,6 +1864,8 @@ function hardResetAllData() {
   auditSelection = [];
   selectedEmployeeIds = new Set();
   listPageSizes = {};
+  cloudLastRemoteAt = "";
+  localStorage.removeItem(CLOUD_LAST_REMOTE_AT_KEY);
   editingEmployeeId = null;
 
   setStatus(moduleStatus, "All data reset. Login with ramees / IT@Admin.", "ok");
@@ -1951,6 +2128,10 @@ function performLogout() {
   sessionUser = null;
   currentCompany = null;
   currentLocation = null;
+  if (cloudPullInterval) {
+    clearInterval(cloudPullInterval);
+    cloudPullInterval = null;
+  }
   localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(COMPANY_KEY);
   localStorage.removeItem(LOCATION_KEY);
@@ -2007,6 +2188,7 @@ function openAdminSettingsFromAnywhere(source = "module") {
   settingsReturnScreen = source;
   showScreen("settings");
   refreshSettingsMeta();
+  refreshCloudSyncForm();
   refreshAdminOptionLists();
   renderSoftwareMasterOptions();
   if (softwareCheckLockToggle) softwareCheckLockToggle.checked = softwareCheckRequiresAdminPassword;
@@ -2735,6 +2917,11 @@ function setActivePage(page, options = {}) {
 }
 
 function route() {
+  if (!sessionUser && cloudPullInterval) {
+    clearInterval(cloudPullInterval);
+    cloudPullInterval = null;
+  }
+  if (sessionUser) startCloudAutoPull();
   refreshLocationOptions();
   if (currentLocation && !getAllLocations().includes(currentLocation)) {
     currentLocation = getDefaultLocation();
@@ -6641,6 +6828,33 @@ softwareCheckLockToggle?.addEventListener("change", () => {
 });
 
 restoreBackupFileBtn.addEventListener("click", restoreFromBackupFile);
+cloudSaveConfigBtn?.addEventListener("click", () => {
+  if (!isAdminUser()) {
+    setStatus(adminSettingsStatus, "Only admins can update cloud sync settings.", "err");
+    return;
+  }
+  saveCloudSyncConfig();
+  startCloudAutoPull();
+  setStatus(adminSettingsStatus, "Cloud sync config saved.", "ok");
+});
+cloudPushNowBtn?.addEventListener("click", async () => {
+  if (!isAdminUser()) {
+    setStatus(adminSettingsStatus, "Only admins can push cloud sync.", "err");
+    return;
+  }
+  saveCloudSyncConfig();
+  const ok = await pushCloudState("manual");
+  if (ok) setStatus(adminSettingsStatus, "Cloud push completed.", "ok");
+});
+cloudPullNowBtn?.addEventListener("click", async () => {
+  if (!isAdminUser()) {
+    setStatus(adminSettingsStatus, "Only admins can pull cloud sync.", "err");
+    return;
+  }
+  saveCloudSyncConfig();
+  const ok = await pullCloudState("manual");
+  if (ok) setStatus(adminSettingsStatus, "Cloud pull completed.", "ok");
+});
 
 moduleChangeCompanyBtn.addEventListener("click", () => {
   currentCompany = null;
@@ -7189,6 +7403,11 @@ async function bootstrapApp() {
   persistLiveBackupSnapshot("startup");
   setupFieldSuggestions();
   initListPageSizeControls();
+  refreshCloudSyncForm();
+  if (cloudSyncConfig.autoSync && isCloudSyncConfigured()) {
+    await pullCloudState("startup");
+  }
+  startCloudAutoPull();
   route();
 }
 
