@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BOQ Calculator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <section id="user-corner" class="user-corner hidden">
+      <button id="user-menu-trigger" type="button" class="user-menu-trigger" aria-label="Open user menu">
+        <img id="user-photo" class="user-photo" alt="User photo" src="assets/sribal-logo.png" />
+      </button>
+      <div id="user-menu" class="user-menu hidden">
+        <strong id="user-name-label">User</strong>
+        <div class="actions user-actions">
+          <button id="user-photo-btn" type="button" class="secondary">Add Photo</button>
+          <button id="user-logout-btn" type="button" class="danger">Logout</button>
+        </div>
+      </div>
+      <input id="user-photo-input" type="file" accept="image/*" class="hidden" />
+    </section>
+
+    <section id="login-page" class="view-section">
+      <header class="hero">
+        <div class="hero-brand">
+          <div>
+            <h1>BOQ Calculator</h1>
+            <p>Login to continue.</p>
+          </div>
+          <img src="assets/sribal-logo.png" alt="Sribal" class="brand-logo" />
+        </div>
+      </header>
+      <section class="panel login-panel">
+        <h2>Login</h2>
+        <form id="login-form" class="login-form" autocomplete="off">
+          <label>Username
+            <input id="login-username" type="text" maxlength="40" required />
+          </label>
+          <label>Password
+            <input id="login-password" type="password" maxlength="60" required />
+          </label>
+          <div class="actions admin-user-actions">
+            <button id="login-btn" type="submit">Login</button>
+          </div>
+        </form>
+        <p id="login-status" class="status" role="status"></p>
+      </section>
+    </section>
+
+    <section id="home-page" class="view-section hidden">
+      <header class="hero">
+        <div class="hero-brand">
+          <div>
+            <h1>BOQ Calculator</h1>
+            <p>Create and manage Bill of Quantities.</p>
+          </div>
+          <img src="assets/sribal-logo.png" alt="Sribal" class="brand-logo" />
+        </div>
+      </header>
+
+      <section class="panel home-panel">
+        <h2>Welcome</h2>
+        <p class="home-copy">Choose an action to continue.</p>
+        <div class="actions home-actions">
+          <button id="home-create-boq" type="button">Create a BOQ</button>
+          <button id="home-client-projects" type="button" class="secondary">Clients & Projects</button>
+          <button id="home-saved-boqs" type="button" class="secondary">Saved BOQs</button>
+          <button id="home-settings" type="button" class="secondary">Settings</button>
+        </div>
+      </section>
+    </section>
+
+    <section id="client-project-page" class="view-section hidden">
+      <header class="hero">
+        <div class="hero-brand">
+          <div>
+            <h1>Clients & Projects</h1>
+            <p>Manage client and project master data.</p>
+            <div class="actions">
+              <button id="cp-home" type="button" class="secondary">Home</button>
+            </div>
+          </div>
+          <img src="assets/sribal-logo.png" alt="Sribal" class="brand-logo" />
+        </div>
+      </header>
+
+      <section class="panel">
+        <h2>Add Client</h2>
+        <div class="actions">
+          <label>Client Name
+            <input id="cp-client-name" type="text" maxlength="120" placeholder="e.g. ABC Industries" />
+          </label>
+          <button id="cp-add-client" type="button" class="secondary">Add Client</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Add Project Under Client</h2>
+        <div class="cp-form-grid">
+          <label>Client
+            <select id="cp-project-client"></select>
+          </label>
+          <label>Project Name
+            <input id="cp-project-name" type="text" maxlength="140" placeholder="e.g. Factory Expansion BOQ" />
+          </label>
+          <label>Project Note
+            <div class="inline-input">
+              <input id="cp-project-note-input" type="text" maxlength="300" placeholder="Type note and click Add" />
+              <button id="cp-add-note" type="button" class="secondary mini">Add</button>
+            </div>
+            <div id="cp-note-list" class="mini-list"></div>
+          </label>
+          <label>Project Remark
+            <div class="inline-input">
+              <input id="cp-project-remark-input" type="text" maxlength="300" placeholder="Type remark and click Add" />
+              <button id="cp-add-remark" type="button" class="secondary mini">Add</button>
+            </div>
+            <div id="cp-remark-list" class="mini-list"></div>
+          </label>
+          <button id="cp-add-project" type="button" class="secondary cp-submit-btn">Add Project</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Client List</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Client Name</th>
+                <th>Projects</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="cp-client-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Project List</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Project Name</th>
+                <th>Client</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="cp-project-tbody"></tbody>
+          </table>
+        </div>
+        <p id="cp-status" class="status" role="status"></p>
+      </section>
+    </section>
+
+    <section id="editor-page" class="view-section hidden">
+      <header class="hero">
+        <div class="hero-brand">
+          <div>
+            <h1>BOQ Calculator</h1>
+            <p>Create line items, calculate totals, and export your Bill of Quantities.</p>
+            <div class="actions">
+              <button id="editor-home" type="button" class="secondary">Home</button>
+              <button id="open-saved-top" type="button" class="secondary">Saved BOQs</button>
+              <button id="editor-settings" type="button" class="secondary">Settings</button>
+            </div>
+          </div>
+          <img src="assets/sribal-logo.png" alt="Sribal" class="brand-logo" />
+        </div>
+      </header>
+
+      <section class="panel">
+        <h2>Project Details</h2>
+        <form id="project-form" class="grid-form" autocomplete="off">
+          <label>Client Name
+            <input id="client-name" type="search" placeholder="Type client name" />
+            <div id="client-name-suggestions" class="suggest-list hidden"></div>
+          </label>
+          <label>Project Name
+            <input id="project-name" type="search" placeholder="Type project name" />
+            <div id="project-name-suggestions" class="suggest-list hidden"></div>
+          </label>
+          <label>Prepared By
+            <input id="prepared-by" type="text" maxlength="80" placeholder="Auto from login user" readonly />
+          </label>
+          <label>Date
+            <input id="boq-date" type="date" />
+          </label>
+          <label>Currency
+            <select id="currency">
+              <option value="INR">INR (₹)</option>
+            </select>
+          </label>
+        </form>
+        <div class="actions">
+          <button id="view-project-notes" type="button" class="secondary hidden">View Project Notes</button>
+        </div>
+        <div id="project-notes-panel" class="project-notes-panel hidden">
+          <h3>Project Notes & Remarks</h3>
+          <p><strong>Notes:</strong></p>
+          <p id="project-notes-text" class="project-note-text">-</p>
+          <p><strong>Remarks:</strong></p>
+          <p id="project-remarks-text" class="project-note-text">-</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="toolbar">
+          <h2>BOQ Items</h2>
+          <div class="actions">
+            <button id="add-item" type="button">Add Item</button>
+            <button id="clear-items" type="button" class="danger">Clear Items</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Description</th>
+                <th>Unit</th>
+                <th>Qty</th>
+                <th>Rate</th>
+                <th>Waste %</th>
+                <th>Amount</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="items-tbody"></tbody>
+          </table>
+        </div>
+        <p id="item-status" class="status" role="status"></p>
+      </section>
+
+      <section class="panel">
+        <h2>Summary</h2>
+        <form id="summary-form" class="summary-grid" autocomplete="off">
+          <label>Discount %
+            <input id="discount" type="number" min="0" step="0.01" value="0" />
+          </label>
+          <label>GST %
+            <input id="tax" type="number" min="0" step="0.01" value="0" />
+          </label>
+          <label>Contingency %
+            <input id="contingency" type="number" min="0" step="0.01" value="0" />
+          </label>
+        </form>
+        <div class="totals">
+          <p><span>Subtotal</span><strong id="subtotal-value">0.00</strong></p>
+          <p><span>Discount Amount</span><strong id="discount-value">0.00</strong></p>
+          <p><span>GST Amount</span><strong id="tax-value">0.00</strong></p>
+          <p><span>Contingency Amount</span><strong id="contingency-value">0.00</strong></p>
+          <p class="grand"><span>Grand Total</span><strong id="grand-total">0.00</strong></p>
+        </div>
+        <div class="actions">
+          <button id="save-boq" type="button" class="secondary">Save BOQ</button>
+          <button id="save-boq-new" type="button" class="secondary">Save As New BOQ</button>
+          <button id="load-boq" type="button" class="secondary">Saved BOQs</button>
+          <button id="print-boq" type="button" class="secondary">Print BOQ</button>
+          <button id="export-csv" type="button" class="secondary">Export CSV</button>
+          <button id="export-json" type="button" class="secondary">Export JSON</button>
+        </div>
+        <p id="summary-status" class="status" role="status"></p>
+      </section>
+    </section>
+
+    <section id="saved-boq-page" class="view-section hidden">
+      <header class="hero">
+        <div class="hero-brand">
+          <div>
+            <h1>Saved BOQs</h1>
+            <p>Browse and open saved BOQ entries.</p>
+          </div>
+          <img src="assets/sribal-logo.png" alt="Sribal" class="brand-logo" />
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="toolbar">
+          <h2>Saved BOQs</h2>
+          <div class="actions">
+            <button id="saved-home" type="button" class="secondary">Home</button>
+            <button id="back-to-editor" type="button" class="secondary">Back To Editor</button>
+            <button id="saved-settings" type="button" class="secondary">Settings</button>
+          </div>
+        </div>
+        <div class="toolbar">
+          <label>Prepared By
+            <select id="saved-prepared-by-filter">
+              <option value="">All</option>
+            </select>
+          </label>
+          <label class="saved-search-wrap">Search BOQ Name
+            <input id="saved-search-input" type="search" placeholder="Search by project/client/prepared by" />
+          </label>
+        </div>
+        <div class="panel">
+          <h3>Clients</h3>
+          <div id="saved-client-buttons" class="button-group"></div>
+          <h3>Projects</h3>
+          <div id="saved-project-buttons" class="button-group"></div>
+        </div>
+        <div class="table-wrap">
+          <table class="saved-table">
+            <thead>
+              <tr>
+                <th>BOQ No</th>
+                <th>Project</th>
+                <th>Client</th>
+                <th>Date</th>
+                <th>Saved At</th>
+                <th>Items</th>
+                <th>Status</th>
+                <th>Negotiation</th>
+                <th>Total</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="saved-boq-tbody"></tbody>
+          </table>
+        </div>
+        <p id="saved-boq-status" class="status" role="status"></p>
+      </section>
+
+      <section class="panel">
+        <h2>Approved BOQs</h2>
+        <div class="table-wrap">
+          <table class="saved-table">
+            <thead>
+              <tr>
+                <th>BOQ No</th>
+                <th>Project</th>
+                <th>Client</th>
+                <th>Date</th>
+                <th>Approved At</th>
+                <th>Prepared By</th>
+                <th>Total</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="approved-boq-tbody"></tbody>
+          </table>
+        </div>
+        <p id="approved-boq-status" class="status" role="status"></p>
+      </section>
+    </section>
+
+    <section id="settings-page" class="view-section hidden">
+      <header class="hero">
+        <div class="hero-brand">
+          <div>
+            <h1>Settings</h1>
+            <p>Configure backup and restore options.</p>
+          </div>
+          <img src="assets/sribal-logo.png" alt="Sribal" class="brand-logo" />
+        </div>
+      </header>
+
+      <section class="panel settings-panel">
+        <div class="toolbar">
+          <h2>Settings</h2>
+          <div class="actions">
+            <button id="settings-back" type="button" class="secondary">Back</button>
+            <button id="settings-home" type="button" class="secondary">Home</button>
+          </div>
+        </div>
+
+        <p class="home-copy">Backup and restore your BOQ records.</p>
+
+        <div class="actions">
+          <button id="download-backup" type="button" class="secondary">Download Backup JSON</button>
+        </div>
+
+        <div class="actions">
+          <label>Restore Backup File (JSON)
+            <input id="backup-file-input" type="file" accept="application/json,.json" />
+          </label>
+          <button id="restore-backup" type="button" class="secondary">Restore Backup</button>
+        </div>
+
+        <section id="admin-user-section" class="panel hidden">
+          <h3>Admin User Management</h3>
+          <div class="actions">
+            <label>Username
+              <input id="admin-new-username" type="text" maxlength="40" placeholder="e.g. john" />
+            </label>
+            <label>Password
+              <input id="admin-new-password" type="password" maxlength="60" placeholder="Set password" />
+            </label>
+            <label>First Name
+              <input id="admin-new-first-name" type="text" maxlength="60" placeholder="e.g. John" />
+            </label>
+            <label>Last Name
+              <input id="admin-new-last-name" type="text" maxlength="60" placeholder="e.g. Doe" />
+            </label>
+            <label>Role
+              <select id="admin-new-role">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </label>
+            <button id="admin-add-user-btn" type="button" class="secondary admin-add-user-btn">Add User</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>First Name</th>
+                  <th>Last Name</th>
+                  <th>Role</th>
+                </tr>
+              </thead>
+              <tbody id="admin-user-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <p id="settings-status" class="status" role="status"></p>
+      </section>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

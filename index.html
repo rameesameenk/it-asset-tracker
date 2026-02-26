@@ -1,0 +1,1557 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offline IT Asset Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <section id="auth-screen" class="screen">
+      <header class="hero compact">
+        <h1>IT Asset Tracker</h1>
+        <p>Offline local login and asset lifecycle management.</p>
+        <div class="hero-actions">
+          <button type="button" id="auth-backup" class="secondary">Backup Now</button>
+          <button type="button" id="auth-logout" class="danger">Logout</button>
+        </div>
+      </header>
+      <section class="panel auth-center">
+        <div class="login-logos">
+          <img src="assets/sribal-logo.png" alt="Sribal" onerror="this.style.display='none'" />
+          <img src="assets/wudless-logo.png" alt="Wudless" onerror="this.style.display='none'" />
+        </div>
+        <div class="auth-box">
+          <h2>Login</h2>
+          <form id="login-form" class="stack-form" autocomplete="off">
+            <label>Username <input id="login-username" type="text" maxlength="40" required /></label>
+            <label>Password <input id="login-password" type="password" maxlength="60" required /></label>
+            <button type="submit">Login</button>
+          </form>
+        </div>
+      </section>
+      <p id="auth-status" class="status" role="status"></p>
+    </section>
+
+    <section id="company-screen" class="screen hidden">
+      <header class="hero compact">
+        <h1>Select Company</h1>
+        <p>Choose company first to continue.</p>
+        <div class="hero-actions">
+          <button type="button" id="company-admin-settings-btn" class="ghost mini hidden">Settings</button>
+          <button type="button" id="company-backup" class="secondary">Backup Now</button>
+          <button type="button" id="company-admin-users-btn" class="ghost hidden">Admin User Management</button>
+          <button type="button" id="company-logout" class="danger push-right">Logout</button>
+        </div>
+      </header>
+      <section class="panel">
+        <div id="company-grid" class="company-grid"></div>
+      </section>
+      <p id="company-status" class="status" role="status"></p>
+    </section>
+
+    <section id="module-screen" class="screen hidden">
+      <header class="hero compact">
+        <h1>Choose Module</h1>
+        <p id="module-company-meta"></p>
+        <p>Select location and open a module.</p>
+        <div class="hero-actions">
+          <button type="button" id="module-change-company" class="ghost">Change Company</button>
+          <button type="button" id="module-backup" class="secondary">Backup Now</button>
+          <button type="button" id="module-admin-users-btn" class="ghost hidden">Admin User Management</button>
+          <button type="button" id="module-admin-settings-btn" class="ghost mini hidden push-right">Settings</button>
+          <button type="button" id="module-logout" class="danger">Logout</button>
+        </div>
+      </header>
+      <section class="panel module-panel">
+        <label>Location
+          <select id="module-location">
+            <option value="Site">Site</option>
+            <option value="HeadOffice">HeadOffice</option>
+            <option value="Factory">Factory</option>
+          </select>
+        </label>
+        <div class="module-grid">
+          <button type="button" class="module-card" data-module="catalog">Asset Catalog</button>
+          <button type="button" class="module-card" data-module="employees">Employees</button>
+          <button type="button" class="module-card" data-module="tracker">Asset Tracker</button>
+          <button type="button" class="module-card" data-module="software-check">Software</button>
+          <button type="button" class="module-card" data-module="software-inventory">Software Inventory</button>
+          <button type="button" class="module-card" data-module="return">Return Asset</button>
+          <button type="button" class="module-card" data-module="audit">System Audit</button>
+          <button type="button" class="module-card" data-module="cleaning">System Cleaning</button>
+          <button type="button" id="activity-module-card" class="module-card hidden" data-module="activity-history">Activity History</button>
+        </div>
+      </section>
+      <p id="module-status" class="status" role="status"></p>
+    </section>
+
+    <section id="settings-screen" class="screen hidden">
+      <header class="hero compact">
+        <h1>Admin Settings</h1>
+        <p id="settings-company-meta"></p>
+        <div class="hero-actions">
+          <button type="button" id="settings-back" class="ghost">Back</button>
+          <button type="button" id="settings-backup" class="secondary">Backup Now</button>
+          <button type="button" id="settings-logout" class="danger">Logout</button>
+        </div>
+      </header>
+      <section id="module-admin-settings-panel" class="panel settings-panel">
+        <div class="toolbar settings-row">
+          <strong>Admin Settings</strong>
+          <button type="button" id="module-reset-all" class="danger">Reset All Data</button>
+        </div>
+        <div class="toolbar settings-row">
+          <button type="button" id="download-full-backup" class="secondary">Download Backup Now</button>
+        </div>
+        <div class="toolbar settings-row">
+          <button type="button" id="select-save-folder" class="secondary">Choose Save Folder</button>
+          <button type="button" id="save-folder-now" class="secondary">Save All Data To Folder</button>
+          <span id="save-folder-label" class="muted">No save folder selected.</span>
+        </div>
+        <div class="toolbar settings-row">
+          <label class="search">Upload Backup File (JSON)
+            <input id="upload-backup-file" type="file" accept="application/json" />
+          </label>
+          <button type="button" id="restore-backup-file" class="secondary">Restore Backup</button>
+        </div>
+        <div class="toolbar settings-row">
+          <label>Company Name
+            <input id="new-company-name" type="text" maxlength="60" placeholder="e.g. NewCompany" />
+          </label>
+          <label>Prefix
+            <input id="new-company-prefix" type="text" maxlength="3" placeholder="e.g. NC" />
+          </label>
+          <label class="search">Company Logo (Optional)
+            <input id="new-company-logo" type="file" accept="image/*" />
+          </label>
+          <button type="button" id="add-company-btn" class="secondary">Add Company</button>
+        </div>
+        <div class="toolbar settings-row">
+          <label>Asset Type
+            <input id="new-asset-type" type="text" maxlength="40" placeholder="e.g. Tablet" />
+          </label>
+          <button type="button" id="add-asset-type-btn" class="secondary">Add Asset Type</button>
+          <label>Status
+            <input id="new-asset-status" type="text" maxlength="40" placeholder="e.g. Lost" />
+          </label>
+          <button type="button" id="add-asset-status-btn" class="secondary">Add Status</button>
+        </div>
+        <div class="toolbar settings-row">
+          <label id="add-department-wrap">Add Department
+            <div class="inline-input">
+              <input id="new-department" type="text" maxlength="50" placeholder="e.g. Finance" />
+              <button type="button" id="add-department" class="mini secondary">Add</button>
+            </div>
+          </label>
+          <label>Add Location
+            <div class="inline-input">
+              <input id="new-location" type="text" maxlength="50" placeholder="e.g. RegionalOffice" />
+              <button type="button" id="add-location-btn" class="mini secondary">Add</button>
+            </div>
+          </label>
+          <label>Add Designation
+            <div class="inline-input">
+              <input id="new-designation" type="text" maxlength="80" placeholder="e.g. Senior Engineer" />
+              <button type="button" id="add-designation-btn" class="mini secondary">Add</button>
+            </div>
+          </label>
+          <label>Add Working Site Name
+            <div class="inline-input">
+              <input id="new-work-site-name" type="text" maxlength="80" placeholder="e.g. Site-A / Project-01" />
+              <button type="button" id="add-work-site-btn" class="mini secondary">Add</button>
+            </div>
+          </label>
+        </div>
+        <div class="toolbar settings-row">
+          <label>Delete Department
+            <select id="delete-department-select"></select>
+          </label>
+          <button type="button" id="delete-department-btn" class="danger">Delete Department</button>
+          <label>Delete Location
+            <select id="delete-location-select"></select>
+          </label>
+          <button type="button" id="delete-location-btn" class="danger">Delete Location</button>
+          <label>Delete Asset Type
+            <select id="delete-asset-type-select"></select>
+          </label>
+          <button type="button" id="delete-asset-type-btn" class="danger">Delete Asset Type</button>
+          <label>Delete Status
+            <select id="delete-status-select"></select>
+          </label>
+          <button type="button" id="delete-status-btn" class="danger">Delete Status</button>
+          <label>Delete Designation
+            <select id="delete-designation-select"></select>
+          </label>
+          <button type="button" id="delete-designation-btn" class="danger">Delete Designation</button>
+          <label>Delete Working Site Name
+            <select id="delete-work-site-select"></select>
+          </label>
+          <button type="button" id="delete-work-site-btn" class="danger">Delete Working Site</button>
+        </div>
+        <div class="toolbar settings-row">
+          <label>Rename Location (From)
+            <select id="rename-location-select"></select>
+          </label>
+          <label>Rename Location (To)
+            <input id="rename-location-input" type="text" maxlength="50" placeholder="e.g. ProjectOffice" />
+          </label>
+          <button type="button" id="rename-location-btn" class="secondary">Rename Location</button>
+        </div>
+        <div class="toolbar settings-row">
+          <label>Rename Department (From)
+            <select id="rename-department-select"></select>
+          </label>
+          <label>Rename Department (To)
+            <input id="rename-department-input" type="text" maxlength="50" placeholder="e.g. Admin & HR" />
+          </label>
+          <button type="button" id="rename-department-btn" class="secondary">Rename Department</button>
+        </div>
+        <div class="toolbar settings-row">
+          <label>Rename Asset Type (From)
+            <select id="rename-asset-type-select"></select>
+          </label>
+          <label>Rename Asset Type (To)
+            <input id="rename-asset-type-input" type="text" maxlength="40" placeholder="e.g. Workstation" />
+          </label>
+          <button type="button" id="rename-asset-type-btn" class="secondary">Rename Asset Type</button>
+        </div>
+        <div class="toolbar settings-row">
+          <label>Rename Status (From)
+            <select id="rename-status-select"></select>
+          </label>
+          <label>Rename Status (To)
+            <input id="rename-status-input" type="text" maxlength="40" placeholder="e.g. Retired-Pending" />
+          </label>
+          <button type="button" id="rename-status-btn" class="secondary">Rename Status</button>
+        </div>
+        <div class="toolbar settings-row">
+          <label>Rename Software (From)
+            <select id="rename-software-select"></select>
+          </label>
+          <label>Rename Software (To)
+            <input id="rename-software-input" type="text" maxlength="80" placeholder="e.g. MS Office 365" />
+          </label>
+          <button type="button" id="rename-software-btn" class="secondary">Rename Software</button>
+        </div>
+        <div class="toolbar settings-row">
+          <label>Rename Designation (From)
+            <select id="rename-designation-select"></select>
+          </label>
+          <label>Rename Designation (To)
+            <input id="rename-designation-input" type="text" maxlength="80" placeholder="e.g. IT Supervisor" />
+          </label>
+          <button type="button" id="rename-designation-btn" class="secondary">Rename Designation</button>
+        </div>
+        <div class="toolbar settings-row">
+          <label>New Software Name
+            <input id="new-software-name" type="text" maxlength="80" placeholder="e.g. Microsoft Office" />
+          </label>
+          <button type="button" id="add-software-btn" class="secondary">Add Software</button>
+          <label>Delete Software
+            <select id="delete-software-select"></select>
+          </label>
+          <button type="button" id="delete-software-btn" class="danger">Delete Software</button>
+        </div>
+        <div class="toolbar settings-row">
+          <label class="toggle-wrap">
+            <input id="software-check-lock-toggle" type="checkbox" />
+            Require admin password to open Software
+          </label>
+        </div>
+        <p id="admin-settings-status" class="status" role="status"></p>
+      </section>
+    </section>
+
+    <section id="app-screen" class="screen hidden">
+      <header class="hero">
+        <div class="brand-row">
+          <img id="company-logo" class="header-logo" alt="Company logo" />
+          <div>
+            <h1>IT Asset Tracker</h1>
+            <p id="session-meta"></p>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <button type="button" id="tab-catalog" class="ghost tab-btn">Asset Catalog</button>
+          <button type="button" id="tab-employees" class="ghost tab-btn">Employees</button>
+          <button type="button" id="tab-tracker" class="ghost tab-btn">Asset Tracker</button>
+          <button type="button" id="tab-software-check" class="ghost tab-btn">Software</button>
+          <button type="button" id="tab-software-inventory" class="ghost tab-btn">Software Inventory</button>
+          <button type="button" id="tab-return" class="ghost tab-btn">Return Asset</button>
+          <button type="button" id="tab-audit" class="ghost tab-btn">System Audit</button>
+          <button type="button" id="tab-cleaning" class="ghost tab-btn">System Cleaning</button>
+          <button type="button" id="tab-activity-history" class="ghost tab-btn hidden">Activity History</button>
+          <button type="button" id="app-backup" class="secondary">Backup Now</button>
+          <button type="button" id="go-module-selector" class="ghost">Choose Module</button>
+          <button type="button" id="app-admin-settings-btn" class="ghost mini hidden">Settings</button>
+          <button type="button" id="change-company" class="ghost">Change Company</button>
+          <button type="button" id="app-admin-users-btn" class="ghost hidden">Admin User Management</button>
+          <button type="button" id="logout" class="danger push-right">Logout</button>
+        </div>
+      </header>
+
+      <section id="admin-users-page" class="page-section hidden">
+        <section class="panel">
+        <h2>Admin User Management</h2>
+        <form id="admin-user-form" class="toolbar" autocomplete="off">
+          <label>Username <input id="new-user-username" type="text" maxlength="40" required /></label>
+          <label>Password <input id="new-user-password" type="password" maxlength="60" required /></label>
+          <label>Role
+            <select id="new-user-role">
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </label>
+          <button type="submit" class="secondary">Add User</button>
+        </form>
+        <p id="admin-user-status" class="status" role="status"></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Username</th><th>Role</th><th>Action</th></tr>
+            </thead>
+            <tbody id="admin-user-tbody"></tbody>
+          </table>
+        </div>
+        </section>
+      </section>
+
+      <section id="activity-history-page" class="page-section hidden">
+        <section class="panel">
+          <h2>All Activity History (Admin)</h2>
+          <div class="toolbar">
+            <label class="search">Search
+              <input id="activity-search" type="search" placeholder="User, action, details, company..." />
+            </label>
+            <label>User
+              <select id="activity-filter-user">
+                <option value="">All</option>
+              </select>
+            </label>
+            <label>Action
+              <select id="activity-filter-action">
+                <option value="">All</option>
+              </select>
+            </label>
+            <label>Date From
+              <input id="activity-date-from" type="date" />
+            </label>
+            <label>Date To
+              <input id="activity-date-to" type="date" />
+            </label>
+            <label>Sort
+              <select id="activity-sort">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="user-az">User A-Z</option>
+                <option value="action-az">Action A-Z</option>
+              </select>
+            </label>
+            <button type="button" id="activity-refresh" class="secondary">Refresh</button>
+            <button type="button" id="activity-export-csv" class="secondary">Export Activity CSV</button>
+            <button type="button" id="activity-export-all" class="secondary">Export All Data</button>
+            <button type="button" id="clear-activity-history" class="danger">Clear Activity History</button>
+          </div>
+          <p id="activity-status-msg" class="status" role="status"></p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date Time</th>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Details</th>
+                  <th>Company</th>
+                  <th>Location</th>
+                </tr>
+              </thead>
+              <tbody id="activity-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="catalog-page" class="page-section hidden">
+        <section class="panel">
+          <h2 id="catalog-form-title">Add Inventory Asset</h2>
+          <form id="catalog-form" class="grid-form" autocomplete="off">
+            <label>Asset Tag * <input id="catalog-tag" type="text" readonly required /></label>
+            <label>Asset Name * <input id="catalog-name" type="text" maxlength="80" required /><div id="catalog-name-suggestions-box" class="suggestions hidden"></div></label>
+            <label>
+              Asset Type
+              <select id="catalog-type">
+                <option value="Laptop">Laptop</option>
+                <option value="Desktop">Desktop</option>
+                <option value="Mobile Phone">Mobile Phone</option>
+                <option value="Printer">Printer</option>
+                <option value="Monitor">Monitor</option>
+                <option value="Network">Network</option>
+                <option value="Peripheral">Peripheral</option>
+                <option value="Server">Server</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label>Serial Number <input id="catalog-serial" type="text" maxlength="60" /><div id="catalog-serial-suggestions-box" class="suggestions hidden"></div></label>
+            <label>Company <input id="catalog-company" type="text" readonly /></label>
+            <label>Location <input id="catalog-location" type="text" readonly /></label>
+            <label>Purchase Date <input id="catalog-date" type="date" /></label>
+            <label>Warranty Date (if any) <input id="catalog-warranty-date" type="date" /></label>
+            <label>
+              Status
+              <select id="catalog-status">
+                <option value="Available">Available</option>
+                <option value="Assigned">Assigned</option>
+                <option value="Returned">Returned</option>
+                <option value="Repair">Repair</option>
+                <option value="Service">Service</option>
+                <option value="Not Usable">Not Usable</option>
+                <option value="Retired">Retired</option>
+              </select>
+            </label>
+
+            <label id="mac-wrap" class="conditional-field">MAC Address <input id="catalog-mac" type="text" maxlength="40" /></label>
+            <label id="imei-wrap" class="conditional-field">IMEI <input id="catalog-imei" type="text" maxlength="40" /></label>
+            <label id="os-wrap" class="conditional-field">OS <input id="catalog-os" type="text" maxlength="50" /><div id="catalog-os-suggestions-box" class="suggestions hidden"></div></label>
+            <label id="storage-wrap" class="conditional-field">Storage <input id="catalog-storage" type="text" maxlength="40" /><div id="catalog-storage-suggestions-box" class="suggestions hidden"></div></label>
+            <label id="ram-wrap" class="conditional-field">RAM <input id="catalog-ram" type="text" maxlength="30" placeholder="8GB / 16GB" /><div id="catalog-ram-suggestions-box" class="suggestions hidden"></div></label>
+            <label id="graphics-wrap" class="conditional-field">Graphics (if available) <input id="catalog-graphics" type="text" maxlength="60" /><div id="catalog-graphics-suggestions-box" class="suggestions hidden"></div></label>
+
+            <label id="printer-mode-wrap" class="conditional-field hidden-field">Printer Type
+              <select id="catalog-printer-mode">
+                <option value="Direct">Direct</option>
+                <option value="Network Enabled">Network Enabled</option>
+              </select>
+            </label>
+            <label id="printer-ip-wrap" class="conditional-field hidden-field">Printer IP Address <input id="catalog-printer-ip" type="text" maxlength="40" placeholder="192.168.1.45" /><div id="catalog-printer-ip-suggestions-box" class="suggestions hidden"></div></label>
+            <label id="printer-password-wrap" class="conditional-field hidden-field">Printer Password (if available) <input id="catalog-printer-password" type="password" maxlength="60" /></label>
+
+            <label id="admin-password-wrap" class="conditional-field">Admin Password (if available)
+              <div class="inline-input">
+                <input id="catalog-admin-password" type="password" maxlength="60" placeholder="Optional" />
+                <button type="button" id="toggle-admin-input" class="mini secondary">Show</button>
+              </div>
+            </label>
+            <label id="catalog-assigned-owner-wrap" class="conditional-field hidden-field">Assigned Person Name
+              <input id="catalog-assigned-owner" type="text" maxlength="80" list="employee-name-list" />
+            </label>
+            <label id="catalog-assigned-gender-wrap" class="conditional-field hidden-field">Assigned Person Gender
+              <select id="catalog-assigned-gender">
+                <option value="">Select</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label id="catalog-assigned-department-wrap" class="conditional-field hidden-field">Assigned Person Department
+              <select id="catalog-assigned-department"></select>
+            </label>
+            <label id="catalog-assigned-system-wrap" class="conditional-field hidden-field">System Name
+              <input id="catalog-assigned-system" type="text" maxlength="80" />
+            </label>
+            <label id="catalog-assigned-location-wrap" class="conditional-field hidden-field">Location Detail (Site Name)
+              <input id="catalog-assigned-location" type="text" maxlength="80" />
+            </label>
+            <label id="catalog-assigned-photo-wrap" class="conditional-field hidden-field">Assigned Person Photo
+              <input id="catalog-assigned-photo" type="file" accept="image/*" />
+            </label>
+            <div id="catalog-assigned-photo-preview-wrap" class="full photo-preview-wrap hidden-field">
+              <img id="catalog-assigned-photo-preview" alt="Assigned preview" hidden />
+            </div>
+
+            <label class="full">Notes <textarea id="catalog-notes" rows="3" maxlength="300"></textarea></label>
+            <div class="actions full">
+              <button type="submit" id="catalog-save">Save Asset</button>
+              <button type="button" id="catalog-cancel" class="ghost" hidden>Cancel Edit</button>
+              <button type="button" id="catalog-delete-all" class="danger">Delete All (Scope)</button>
+            </div>
+          </form>
+          <p id="catalog-status-msg" class="status" role="status"></p>
+        </section>
+
+        <section class="panel">
+          <h2>Bulk Add (Excel CSV)</h2>
+          <div class="toolbar" id="employee-list-toolbar">
+            <label class="search">Import Asset CSV <input id="catalog-import-csv" type="file" accept=".csv,text/csv" /></label>
+            <button type="button" id="catalog-sample-csv" class="secondary">Download Sample CSV</button>
+            <button type="button" id="catalog-export-csv" class="secondary">Export Catalog CSV</button>
+            <label>Bulk Upload History
+              <select id="catalog-bulk-history"></select>
+            </label>
+            <button type="button" id="catalog-undo-last-bulk" class="ghost">Undo Last Bulk Upload</button>
+            <button type="button" id="catalog-undo-all-bulk" class="ghost">Undo All Bulk Uploads</button>
+            <button type="button" id="catalog-delete-bulk-selected" class="danger">Delete Selected Bulk Upload</button>
+          </div>
+          <p class="muted">Headers: name,type,serial,purchaseDate,warrantyDate,status,assignedOwner,assignedEmployeeId,macAddress,imei,os,storage,ram,graphics,printerMode,printerIp,printerPassword,adminPassword,notes</p>
+        </section>
+
+        <section class="panel">
+          <h2>Catalog Asset List</h2>
+          <div class="toolbar">
+            <label>Status View
+              <select id="catalog-view-status">
+                <option value="">All</option>
+                <option value="Available">Available</option>
+                <option value="Assigned">Assigned</option>
+                <option value="Returned">Returned</option>
+                <option value="Repair">Repair</option>
+                <option value="Service">Service</option>
+                <option value="Not Usable">Not Usable</option>
+                <option value="Retired">Retired</option>
+              </select>
+            </label>
+            <label class="search">Search
+              <input id="catalog-search" type="search" placeholder="Asset tag, name, serial, assigned person..." />
+            </label>
+            <button type="button" id="catalog-select-all" class="ghost">Select All Visible</button>
+            <button type="button" id="catalog-delete-selected" class="danger">Delete Selected</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Select</th>
+                  <th>Tag</th>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Serial</th>
+                  <th>Status</th>
+                  <th>Assigned To</th>
+                  <th>Company</th>
+                  <th>Location</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="catalog-list-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="software-check-page" class="page-section hidden">
+        <section class="panel">
+          <h2>Software Allocation (Laptop/Desktop/Mobile)</h2>
+          <form id="software-form" class="grid-form" autocomplete="off">
+            <label>Search Asset Tag / MAC
+              <input id="software-asset-search" type="search" placeholder="Type asset tag or MAC..." />
+            </label>
+            <label>Select Asset Tag / System
+              <select id="software-asset-select"></select>
+            </label>
+            <label>Assigned Person
+              <input id="software-assigned-owner" type="text" readonly />
+            </label>
+            <label>MAC Address
+              <input id="software-selected-mac" type="text" readonly />
+            </label>
+            <label>Software Name
+              <select id="software-name-select"></select>
+            </label>
+            <label>Pirated
+              <select id="software-pirated-select">
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </label>
+            <div class="actions">
+              <button type="submit" id="software-save" class="secondary">Save Software Entry</button>
+            </div>
+          </form>
+          <p id="software-status-msg" class="status" role="status"></p>
+        </section>
+
+        <section class="panel">
+          <h2>Device List</h2>
+          <div class="toolbar">
+            <label class="search">Search Devices
+              <input id="software-device-search" type="search" placeholder="Search tag, name, system, owner, MAC..." />
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tag</th>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Assigned To</th>
+                  <th>System Name</th>
+                  <th>Software Count</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="software-device-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Installed Software Records</h2>
+          <div class="toolbar">
+            <label class="search">Search
+              <input id="software-search" type="search" placeholder="Asset tag, system, software..." />
+            </label>
+            <label>View
+              <select id="software-view-scope">
+                <option value="all">All Devices</option>
+                <option value="selected">Selected Device</option>
+              </select>
+            </label>
+            <label>Software Name (Master)
+              <select id="software-sort-software">
+                <option value="">All Software</option>
+              </select>
+            </label>
+            <label>Pirated Filter
+              <select id="software-sort-pirated">
+                <option value="all">All</option>
+                <option value="yes">Pirated Only</option>
+                <option value="no">Non-Pirated Only</option>
+              </select>
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Asset Tag</th>
+                  <th>System</th>
+                  <th>Type</th>
+                  <th>Software</th>
+                  <th>Pirated</th>
+                  <th>Updated By</th>
+                  <th>Updated At</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="software-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="software-device-view-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card">
+          <div class="modal-head">
+            <h2 id="software-device-view-title">Installed Software</h2>
+            <button type="button" id="software-device-view-close" class="ghost mini">Close</button>
+          </div>
+          <p id="software-device-view-summary" class="muted"></p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Software</th>
+                  <th>Pirated</th>
+                  <th>Updated By</th>
+                  <th>Updated At</th>
+                </tr>
+              </thead>
+              <tbody id="software-device-view-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="software-inventory-page" class="page-section hidden">
+        <section class="panel">
+          <h2>Software Inventory (Purchased Licenses)</h2>
+          <form id="software-inventory-form" class="grid-form" autocomplete="off">
+            <label>Software Name
+              <select id="inventory-software-name"></select>
+            </label>
+            <label>Purchase Date (if known)
+              <input id="inventory-purchase-date" type="date" />
+            </label>
+            <label>Expiry / Renewal Date
+              <input id="inventory-expiry-date" type="date" />
+            </label>
+            <label>Cost
+              <input id="inventory-cost" type="number" min="0" step="0.01" placeholder="0.00" />
+            </label>
+            <label>Activation Code (if available)
+              <input id="inventory-activation-code" type="text" maxlength="120" />
+            </label>
+            <label>Max Users (Seats)
+              <input id="inventory-max-users" type="number" min="0" step="1" placeholder="e.g. 10" />
+            </label>
+            <div class="actions full">
+              <button type="submit" id="inventory-save" class="secondary">Save Inventory</button>
+              <button type="button" id="inventory-cancel" class="ghost" hidden>Cancel Edit</button>
+            </div>
+          </form>
+          <p id="inventory-status-msg" class="status" role="status"></p>
+        </section>
+
+        <section class="panel">
+          <h2>Software Inventory List</h2>
+          <div class="toolbar">
+            <label class="search">Search
+              <input id="inventory-search" type="search" placeholder="Software name, code..." />
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Software</th>
+                  <th>Purchase Date</th>
+                  <th>Expiry Date</th>
+                  <th>Cost</th>
+                  <th>Activation Code</th>
+                  <th>Max Users</th>
+                  <th>Used</th>
+                  <th>Available</th>
+                  <th>Updated By</th>
+                  <th>Updated At</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="inventory-edit-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card">
+          <div class="modal-head">
+            <h2>Edit Software Inventory</h2>
+            <button type="button" id="inventory-modal-close" class="ghost mini">Close</button>
+          </div>
+          <form id="inventory-modal-form" class="grid-form" autocomplete="off">
+            <label>Software Name
+              <select id="inventory-modal-software-name"></select>
+            </label>
+            <label>Purchase Date (if known)
+              <input id="inventory-modal-purchase-date" type="date" />
+            </label>
+            <label>Expiry / Renewal Date
+              <input id="inventory-modal-expiry-date" type="date" />
+            </label>
+            <label>Cost
+              <input id="inventory-modal-cost" type="number" min="0" step="0.01" placeholder="0.00" />
+            </label>
+            <label>Activation Code (if available)
+              <input id="inventory-modal-activation-code" type="text" maxlength="120" />
+            </label>
+            <label>Max Users (Seats)
+              <input id="inventory-modal-max-users" type="number" min="0" step="1" placeholder="e.g. 10" />
+            </label>
+            <div class="actions full">
+              <button type="submit" id="inventory-modal-save" class="secondary">Update Inventory</button>
+              <button type="button" id="inventory-modal-cancel" class="ghost">Cancel</button>
+            </div>
+          </form>
+          <p id="inventory-modal-status-msg" class="status" role="status"></p>
+        </div>
+      </section>
+
+      <section id="employees-page" class="page-section hidden">
+        <section class="panel">
+          <h2>Employee Master</h2>
+          <form id="employee-form" class="grid-form" autocomplete="off">
+            <label>Employee Name *
+              <input id="employee-name" type="text" maxlength="80" required />
+            </label>
+            <label>Employee ID
+              <input id="employee-id" type="text" maxlength="40" />
+            </label>
+            <label>Mobile Number
+              <input id="employee-mobile" type="text" maxlength="20" />
+            </label>
+            <label>Email ID
+              <input id="employee-email" type="email" maxlength="100" />
+            </label>
+            <label>Designation
+              <input id="employee-designation" type="text" maxlength="80" list="employee-designation-list" />
+            </label>
+            <label>Gender
+              <select id="employee-gender">
+                <option value="">Select</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label>Department
+              <input id="employee-department" type="text" maxlength="60" list="employee-department-list" placeholder="Select or type department" />
+            </label>
+            <label>Company
+              <input id="employee-company" type="text" readonly />
+            </label>
+            <label>Location
+              <input id="employee-location" type="text" readonly />
+            </label>
+            <label id="employee-site-name-wrap">Site Name
+              <input id="employee-site-name" type="text" maxlength="80" list="employee-work-site-list" placeholder="e.g. Site-A / Project Name" />
+            </label>
+            <label class="full">Employee Photo
+              <input id="employee-photo" type="file" accept="image/*" />
+            </label>
+            <div class="full photo-preview-wrap"><img id="employee-photo-preview" alt="Employee preview" hidden /></div>
+            <div class="actions full">
+              <button type="submit" id="employee-save">Add Employee</button>
+              <button type="button" id="employee-cancel" class="ghost" hidden>Cancel Edit</button>
+            </div>
+          </form>
+          <p id="employee-status-msg" class="status" role="status"></p>
+        </section>
+
+        <section class="panel">
+          <h2>Bulk Add Employees (CSV)</h2>
+          <div class="toolbar">
+            <label class="search">Import Employee CSV
+              <input id="employee-import-csv" type="file" accept=".csv,text/csv" />
+            </label>
+            <button type="button" id="employee-sample-csv" class="secondary">Download Employee Sample CSV</button>
+          </div>
+          <p id="employee-csv-headers-hint" class="muted">Headers: name,employeeId,mobile,email,designation,gender,department,siteName</p>
+        </section>
+
+        <section class="panel">
+          <h2>Employee List</h2>
+          <div class="toolbar">
+            <label class="search">Search Employees
+              <input id="employee-search" type="search" placeholder="Name, ID, mobile, email, designation..." />
+            </label>
+            <label>Sort
+              <select id="employee-sort">
+                <option value="name-asc">Name A-Z</option>
+                <option value="name-desc">Name Z-A</option>
+                <option value="site-asc">Site Name A-Z</option>
+                <option value="site-desc">Site Name Z-A</option>
+              </select>
+            </label>
+            <button type="button" id="employee-select-all" class="secondary">Select All</button>
+            <button type="button" id="employee-delete-selected" class="danger">Delete Selected</button>
+            <label>Bulk Upload History
+              <select id="employee-bulk-history"></select>
+            </label>
+            <button type="button" id="employee-undo-last-bulk" class="ghost">Undo Last Bulk Upload</button>
+            <button type="button" id="employee-undo-all-bulk" class="ghost">Undo All Bulk Uploads</button>
+            <button type="button" id="employee-delete-bulk-selected" class="danger">Delete Selected Bulk Upload</button>
+          </div>
+          <input id="employee-photo-edit-input" type="file" accept="image/*" class="hidden" />
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Select</th>
+                  <th>Photo</th>
+                  <th>Name</th>
+                  <th>Employee ID</th>
+                  <th>Mobile</th>
+                  <th>Email</th>
+                  <th>Designation</th>
+                  <th>Gender</th>
+                  <th>Department</th>
+                  <th id="employee-site-name-col">Site Name</th>
+                  <th>Company</th>
+                  <th>Location</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="employee-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="catalog-edit-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card">
+          <div class="modal-head">
+            <h2 id="catalog-edit-modal-title">Edit Catalog Asset</h2>
+            <button type="button" id="catalog-edit-modal-close" class="ghost mini">Close</button>
+          </div>
+          <form id="catalog-edit-form" class="grid-form" autocomplete="off">
+            <label>Asset Tag *
+              <input id="catalog-edit-tag" type="text" readonly required />
+            </label>
+            <label>Asset Name *
+              <input id="catalog-edit-name" type="text" maxlength="80" required />
+            </label>
+            <label>Asset Type
+              <select id="catalog-edit-type"></select>
+            </label>
+            <label>Serial Number
+              <input id="catalog-edit-serial" type="text" maxlength="60" />
+            </label>
+            <label>Company
+              <input id="catalog-edit-company" type="text" readonly />
+            </label>
+            <label>Location
+              <input id="catalog-edit-location" type="text" readonly />
+            </label>
+            <label>Purchase Date
+              <input id="catalog-edit-date" type="date" />
+            </label>
+            <label>Warranty Date (if any)
+              <input id="catalog-edit-warranty-date" type="date" />
+            </label>
+            <label>Status
+              <select id="catalog-edit-status"></select>
+            </label>
+
+            <label id="catalog-edit-mac-wrap" class="conditional-field">MAC Address
+              <input id="catalog-edit-mac" type="text" maxlength="40" />
+            </label>
+            <label id="catalog-edit-imei-wrap" class="conditional-field">IMEI
+              <input id="catalog-edit-imei" type="text" maxlength="40" />
+            </label>
+            <label id="catalog-edit-os-wrap" class="conditional-field">OS
+              <input id="catalog-edit-os" type="text" maxlength="50" />
+            </label>
+            <label id="catalog-edit-storage-wrap" class="conditional-field">Storage
+              <input id="catalog-edit-storage" type="text" maxlength="40" />
+            </label>
+            <label id="catalog-edit-ram-wrap" class="conditional-field">RAM
+              <input id="catalog-edit-ram" type="text" maxlength="30" />
+            </label>
+            <label id="catalog-edit-graphics-wrap" class="conditional-field">Graphics (if available)
+              <input id="catalog-edit-graphics" type="text" maxlength="60" />
+            </label>
+
+            <label id="catalog-edit-printer-mode-wrap" class="conditional-field hidden-field">Printer Type
+              <select id="catalog-edit-printer-mode">
+                <option value="Direct">Direct</option>
+                <option value="Network Enabled">Network Enabled</option>
+              </select>
+            </label>
+            <label id="catalog-edit-printer-ip-wrap" class="conditional-field hidden-field">Printer IP Address
+              <input id="catalog-edit-printer-ip" type="text" maxlength="40" />
+            </label>
+            <label id="catalog-edit-printer-password-wrap" class="conditional-field hidden-field">Printer Password (if available)
+              <input id="catalog-edit-printer-password" type="password" maxlength="60" />
+            </label>
+            <label id="catalog-edit-admin-password-wrap" class="conditional-field">Admin Password (if available)
+              <input id="catalog-edit-admin-password" type="password" maxlength="60" />
+            </label>
+
+            <label id="catalog-edit-assigned-owner-wrap" class="conditional-field hidden-field">Assigned Person Name
+              <input id="catalog-edit-assigned-owner" type="text" maxlength="80" list="employee-name-list" />
+            </label>
+            <label id="catalog-edit-assigned-gender-wrap" class="conditional-field hidden-field">Assigned Person Gender
+              <select id="catalog-edit-assigned-gender">
+                <option value="">Select</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label id="catalog-edit-assigned-department-wrap" class="conditional-field hidden-field">Assigned Person Department
+              <select id="catalog-edit-assigned-department"></select>
+            </label>
+            <label id="catalog-edit-assigned-system-wrap" class="conditional-field hidden-field">System Name
+              <input id="catalog-edit-assigned-system" type="text" maxlength="80" />
+            </label>
+            <label id="catalog-edit-assigned-location-wrap" class="conditional-field hidden-field">Location Detail (Site Name)
+              <input id="catalog-edit-assigned-location" type="text" maxlength="80" />
+            </label>
+            <label id="catalog-edit-assigned-photo-wrap" class="conditional-field hidden-field">Assigned Person Photo
+              <input id="catalog-edit-assigned-photo" type="file" accept="image/*" />
+            </label>
+            <div id="catalog-edit-assigned-photo-preview-wrap" class="full photo-preview-wrap hidden-field">
+              <img id="catalog-edit-assigned-photo-preview" alt="Assigned preview" hidden />
+            </div>
+
+            <label class="full">Notes
+              <textarea id="catalog-edit-notes" rows="3" maxlength="300"></textarea>
+            </label>
+            <div class="actions full">
+              <button type="submit" class="secondary">Save Changes</button>
+              <button type="button" id="catalog-edit-modal-cancel" class="ghost">Cancel</button>
+            </div>
+          </form>
+          <p id="catalog-edit-status-msg" class="status" role="status"></p>
+        </div>
+      </section>
+
+      <section id="employee-photo-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card">
+          <div class="modal-head">
+            <h2>Employee Photo</h2>
+            <button type="button" id="employee-photo-modal-close" class="ghost mini">Close</button>
+          </div>
+          <div class="photo-preview-wrap"><img id="employee-photo-modal-image" alt="Employee full" /></div>
+        </div>
+      </section>
+      <section id="employee-edit-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card">
+          <div class="modal-head">
+            <h2>Edit Employee</h2>
+            <button type="button" id="employee-edit-modal-close" class="ghost mini">Close</button>
+          </div>
+          <form id="employee-edit-form" class="grid-form" autocomplete="off">
+            <label>Employee Name *
+              <input id="employee-edit-name" type="text" maxlength="80" required />
+            </label>
+            <label>Employee ID
+              <input id="employee-edit-id" type="text" maxlength="40" />
+            </label>
+            <label>Mobile Number
+              <input id="employee-edit-mobile" type="text" maxlength="20" />
+            </label>
+            <label>Email ID
+              <input id="employee-edit-email" type="email" maxlength="100" />
+            </label>
+            <label>Designation
+              <input id="employee-edit-designation" type="text" maxlength="80" list="employee-designation-list" />
+            </label>
+            <label>Gender
+              <select id="employee-edit-gender">
+                <option value="">Select</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label>Department
+              <input id="employee-edit-department" type="text" maxlength="60" list="employee-department-list" placeholder="Select or type department" />
+            </label>
+            <label>Company
+              <input id="employee-edit-company" type="text" readonly />
+            </label>
+            <label>Location
+              <input id="employee-edit-location" type="text" readonly />
+            </label>
+            <label id="employee-edit-site-name-wrap">Site Name
+              <input id="employee-edit-site-name" type="text" maxlength="80" list="employee-work-site-list" placeholder="e.g. Site-A / Project Name" />
+            </label>
+            <label class="full">Employee Photo
+              <input id="employee-edit-photo" type="file" accept="image/*" />
+            </label>
+            <div class="full photo-preview-wrap"><img id="employee-edit-photo-preview" alt="Employee preview" hidden /></div>
+            <div class="actions full">
+              <button type="submit" class="secondary">Save Changes</button>
+              <button type="button" id="employee-edit-modal-cancel" class="ghost">Cancel</button>
+            </div>
+          </form>
+          <p id="employee-edit-status-msg" class="status" role="status"></p>
+        </div>
+      </section>
+
+      <section id="tracker-page" class="page-section hidden">
+        <section class="panel">
+          <h2>Assign / Deassign / Status Update</h2>
+          <form id="assign-form" class="grid-form" autocomplete="off">
+            <label>Select Asset Tag
+              <input id="assign-asset-select" type="text" placeholder="Type/search asset tag..." autocomplete="off" />
+              <div id="assign-asset-suggestions" class="suggestions hidden"></div>
+            </label>
+            <label>Asset Name <input id="assign-asset-name" type="text" readonly /></label>
+            <label>Asset Type <input id="assign-asset-type" type="text" readonly /></label>
+            <label>System Name <input id="assign-system-name" type="text" maxlength="80" placeholder="e.g. HR-LAP-12 / HOSTNAME" /></label>
+            <label id="assign-location-detail-wrap">Location Detail (Site Name) <input id="assign-location-detail" type="text" maxlength="80" placeholder="e.g. Site-A / Building-2" /></label>
+            <label>Current Status <input id="assign-status" type="text" readonly /></label>
+
+            <label>Department
+              <select id="assign-department"></select>
+            </label>
+            <label>Assigned Person Name <input id="assign-owner" type="text" maxlength="60" /><div id="assign-owner-suggestions-box" class="suggestions hidden"></div></label>
+            <label>Gender
+              <select id="assign-gender">
+                <option value="">Select</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label class="full">Assigned Person Photo <input id="assign-photo" type="file" accept="image/*" /></label>
+            <div class="full photo-preview-wrap"><img id="assign-photo-preview" alt="Assignee preview" hidden /></div>
+
+            <label>Status Action
+              <select id="status-action">
+                <option value="Assigned">Assigned</option>
+                <option value="Available">Available</option>
+                <option value="Repair">Repair</option>
+                <option value="Service">Service</option>
+                <option value="Not Usable">Not Usable</option>
+                <option value="Retired">Retired</option>
+              </select>
+            </label>
+
+            <div class="actions full">
+              <button type="button" id="assign-save">Assign / Update</button>
+              <button type="button" id="deassign-asset" class="secondary">Deassign</button>
+              <button type="button" id="return-asset" class="danger">Open Return Page</button>
+              <button type="button" id="apply-status" class="secondary">Apply Status</button>
+            </div>
+          </form>
+          <p id="tracker-status-msg" class="status" role="status"></p>
+        </section>
+
+        <section class="panel toolbar">
+          <label class="search">Search <input id="search" type="search" placeholder="Tag, name, serial, owner..." /></label>
+          <label class="search">Barcode Scanner Search <input id="scan-input" type="text" placeholder="Scan barcode here" /></label>
+          <label>Filter Type
+            <select id="filter-type">
+              <option value="">All</option>
+              <option value="Laptop">Laptop</option>
+              <option value="Desktop">Desktop</option>
+              <option value="Mobile Phone">Mobile Phone</option>
+              <option value="Printer">Printer</option>
+              <option value="Monitor">Monitor</option>
+              <option value="Network">Network</option>
+              <option value="Peripheral">Peripheral</option>
+              <option value="Server">Server</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label>Filter Status
+            <select id="filter-status">
+              <option value="">All</option>
+              <option value="Available">Available</option>
+              <option value="Assigned">Assigned</option>
+              <option value="Returned">Returned</option>
+              <option value="Repair">Repair</option>
+              <option value="Service">Service</option>
+              <option value="Not Usable">Not Usable</option>
+              <option value="Retired">Retired</option>
+            </select>
+          </label>
+          <div class="toolbar-actions">
+            <button type="button" id="scan-find" class="secondary">Find</button>
+            <button type="button" id="manual-backup" class="secondary">Download Backup</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Export (Excel CSV)</h2>
+          <div class="toolbar">
+            <label>Export Mode
+              <select id="export-mode">
+                <option value="sorted">Current Sorted/Filtered View</option>
+                <option value="all">Whole Data</option>
+                <option value="dateRange">Date Range</option>
+              </select>
+            </label>
+            <label>Date From <input id="export-from" type="date" /></label>
+            <label>Date To <input id="export-to" type="date" /></label>
+            <button type="button" id="export-csv" class="secondary">Export Excel CSV</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Asset Tracker</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tag</th>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Serial</th>
+                  <th id="th-mac" class="hidden">MAC</th>
+                  <th id="th-imei" class="hidden">IMEI</th>
+                  <th id="th-os" class="hidden">OS</th>
+                  <th id="th-storage" class="hidden">Storage</th>
+                  <th id="th-ram" class="hidden">RAM</th>
+                  <th id="th-graphics" class="hidden">Graphics</th>
+                  <th>Assigned To</th>
+                  <th>System Name</th>
+                  <th>Location Detail</th>
+                  <th>Gender</th>
+                  <th>Department</th>
+                  <th>Company</th>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th>Admin Access</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="asset-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel barcode-panel">
+          <h2>Barcode Preview</h2>
+          <p>Each barcode is unique. Scanning always fetches the exact asset.</p>
+          <div id="barcode-preview" class="barcode-preview empty">No asset selected.</div>
+          <button type="button" id="print-label" class="secondary" disabled>Print Label</button>
+        </section>
+      </section>
+
+      <section id="return-page" class="page-section hidden">
+        <section class="panel">
+          <h2>Return Asset</h2>
+          <form id="return-form" class="grid-form" autocomplete="off">
+            <label>Select Asset Tag
+              <input id="return-asset-select" type="text" placeholder="Type/search asset tag..." autocomplete="off" />
+              <div id="return-asset-suggestions" class="suggestions hidden"></div>
+            </label>
+            <label>Asset Name <input id="return-asset-name" type="text" readonly /></label>
+            <label>Asset Type <input id="return-asset-type" type="text" readonly /></label>
+            <label>Current Owner <input id="return-current-owner" type="text" readonly /></label>
+            <label>Current Status <input id="return-current-status" type="text" readonly /></label>
+            <label>Return Date *
+              <input id="return-date" type="date" required />
+            </label>
+            <label>Return Reason *
+              <select id="return-reason" required>
+                <option value="">Select</option>
+                <option value="Employee Exit">Employee Exit</option>
+                <option value="Role Change">Role Change</option>
+                <option value="Replacement">Replacement</option>
+                <option value="Damaged">Damaged</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label class="full">Return Note
+              <textarea id="return-note" rows="3" maxlength="300" placeholder="Optional details"></textarea>
+            </label>
+            <div class="actions full">
+              <button type="button" id="return-save" class="danger">Confirm Return</button>
+              <button type="button" id="return-clear" class="ghost">Clear</button>
+            </div>
+          </form>
+          <p id="return-status-msg" class="status" role="status"></p>
+        </section>
+        <section class="panel">
+          <h2>Return History</h2>
+          <div class="toolbar">
+            <button type="button" id="return-export-csv" class="secondary">Export Return History CSV</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Return Date</th>
+                  <th>Asset Tag</th>
+                  <th>Asset Name</th>
+                  <th>Type</th>
+                  <th>Previous Owner</th>
+                  <th>Reason</th>
+                  <th>Note</th>
+                  <th>Company</th>
+                  <th>Location</th>
+                  <th>Returned By</th>
+                </tr>
+              </thead>
+              <tbody id="return-history-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="audit-page" class="page-section hidden">
+        <section class="panel">
+          <h2>Step 1: Random System Selection</h2>
+          <div class="toolbar">
+            <label>Location
+              <select id="audit-location">
+                <option value="Site">Site</option>
+                <option value="HeadOffice">HeadOffice</option>
+                <option value="Factory">Factory</option>
+              </select>
+            </label>
+            <label>Random Count <input id="audit-count" type="number" min="1" max="50" value="5" /></label>
+            <button type="button" id="run-audit" class="secondary">Generate Random Audit List</button>
+            <button type="button" id="open-audit-report" class="secondary">Open Audit Report</button>
+            <button type="button" id="view-audit-reports" class="secondary">View Audit Reports</button>
+          </div>
+          <p id="audit-status" class="status" role="status"></p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Select</th>
+                  <th>Asset Tag</th>
+                  <th>PC Name</th>
+                  <th>Department</th>
+                  <th>User Name</th>
+                  <th>OS Version</th>
+                  <th>Last Audit Date</th>
+                  <th>Next Due Date</th>
+                </tr>
+              </thead>
+              <tbody id="audit-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="audit-report-page" class="page-section hidden">
+        <section class="panel">
+          <h2>Step 2: Audit Report</h2>
+          <div class="toolbar">
+            <label>Selected System
+              <select id="audit-report-asset"></select>
+            </label>
+            <button type="button" id="audit-report-back" class="ghost">Back To Random Selection</button>
+          </div>
+          <form id="audit-report-form" class="grid-form" autocomplete="off">
+            <label>Audit Date
+              <input id="audit-report-date" type="date" />
+            </label>
+            <label>PC Name
+              <input id="audit-report-pc-name" type="text" maxlength="80" />
+            </label>
+            <label>Department
+              <input id="audit-report-department" type="text" maxlength="60" />
+            </label>
+            <label>User Name
+              <input id="audit-report-user-name" type="text" maxlength="80" />
+            </label>
+            <label>OS Version
+              <input id="audit-report-os-version" type="text" maxlength="80" />
+            </label>
+            <label>Windows Activated (Y/N)
+              <select id="audit-report-win-activated"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Admin Accounts Verified (Y/N)
+              <select id="audit-report-admin-verified"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Unauthorized Software (Y/N)
+              <select id="audit-report-unauthorized-sw"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Antivirus Active (Y/N)
+              <select id="audit-report-antivirus"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Firewall ON (Y/N)
+              <select id="audit-report-firewall"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Updates Pending (Y/N)
+              <select id="audit-report-updates-pending"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>USB Restricted (Y/N)
+              <select id="audit-report-usb-restricted"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Printer Config OK (Y/N)
+              <select id="audit-report-printer-config"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Backup Verified (Y/N)
+              <select id="audit-report-backup-verified"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Risk Level
+              <select id="audit-report-risk-level">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </label>
+            <label>Auditor Name
+              <input id="audit-report-auditor-name" type="text" maxlength="80" />
+            </label>
+            <label class="full">Issues Found
+              <textarea id="audit-report-issues" rows="3" maxlength="500"></textarea>
+            </label>
+            <label class="full">Action Taken
+              <textarea id="audit-report-action-taken" rows="3" maxlength="500"></textarea>
+            </label>
+            <div class="actions full">
+              <button type="submit" id="save-audit" class="secondary">Mark Audit Done</button>
+            </div>
+          </form>
+          <p id="audit-report-status" class="status" role="status"></p>
+        </section>
+        <section class="panel">
+          <h2>Saved Audit Reports</h2>
+          <div class="toolbar">
+            <label>View System Report
+              <select id="audit-report-history-system"></select>
+            </label>
+            <label class="search">Search Report
+              <input id="audit-report-search" type="search" placeholder="Asset tag, PC name, user, department..." />
+            </label>
+            <label>Show
+              <select id="audit-report-page-size">
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="all">All</option>
+              </select>
+            </label>
+            <button type="button" id="refresh-audit-history" class="secondary">Refresh Reports</button>
+            <button type="button" id="view-audit-due" class="secondary">View Due Systems</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Audit Date</th>
+                  <th>Asset Tag</th>
+                  <th>PC Name</th>
+                  <th>Department</th>
+                  <th>User Name</th>
+                  <th>Risk Level</th>
+                  <th>Issues Found</th>
+                  <th>Auditor Name</th>
+                  <th>Location</th>
+                  <th>Admin Action</th>
+                </tr>
+              </thead>
+              <tbody id="audit-report-history-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="audit-status-page" class="page-section hidden">
+        <section class="panel">
+          <h2>All Devices Audit Overview</h2>
+          <div class="toolbar">
+            <label>Location
+              <select id="audit-status-location">
+                <option value="Site">Site</option>
+                <option value="HeadOffice">HeadOffice</option>
+                <option value="Factory">Factory</option>
+              </select>
+            </label>
+            <label>Audit Filter
+              <select id="audit-status-filter">
+                <option value="">All</option>
+                <option value="audited">Audited</option>
+                <option value="notAudited">Not Audited</option>
+              </select>
+            </label>
+            <button type="button" id="refresh-audit-status" class="secondary">Refresh</button>
+            <button type="button" id="audit-status-back" class="ghost">Back To System Audit</button>
+          </div>
+          <p id="audit-status-msg" class="status" role="status"></p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Asset Tag</th>
+                  <th>PC Name</th>
+                  <th>Department</th>
+                  <th>User Name</th>
+                  <th>Last Audit Date</th>
+                  <th>Next Due Date</th>
+                  <th>Audited</th>
+                  <th>Audit State</th>
+                  <th>View Report</th>
+                  <th>Admin Action</th>
+                </tr>
+              </thead>
+              <tbody id="audit-status-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="audit-report-view-panel" class="panel hidden">
+          <h2>Audit Report View</h2>
+          <div id="audit-report-view-template" class="grid-form"></div>
+          <div class="actions">
+            <button type="button" id="audit-report-view-close" class="ghost">Close Report</button>
+          </div>
+        </section>
+      </section>
+
+      <section id="audit-edit-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card">
+          <div class="modal-head">
+            <h2>Edit Audit Report</h2>
+            <button type="button" id="audit-edit-modal-close" class="ghost mini">Close</button>
+          </div>
+          <form id="audit-edit-form" class="grid-form" autocomplete="off">
+            <label>Asset Tag
+              <input id="audit-edit-asset-tag" type="text" readonly />
+            </label>
+            <label>Audit Date
+              <input id="audit-edit-date" type="date" />
+            </label>
+            <label>PC Name
+              <input id="audit-edit-pc-name" type="text" maxlength="80" />
+            </label>
+            <label>Department
+              <input id="audit-edit-department" type="text" maxlength="60" />
+            </label>
+            <label>User Name
+              <input id="audit-edit-user-name" type="text" maxlength="80" />
+            </label>
+            <label>OS Version
+              <input id="audit-edit-os-version" type="text" maxlength="80" />
+            </label>
+            <label>Windows Activated (Y/N)
+              <select id="audit-edit-win-activated"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Admin Accounts Verified (Y/N)
+              <select id="audit-edit-admin-verified"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Unauthorized Software (Y/N)
+              <select id="audit-edit-unauthorized-sw"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Antivirus Active (Y/N)
+              <select id="audit-edit-antivirus"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Firewall ON (Y/N)
+              <select id="audit-edit-firewall"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Updates Pending (Y/N)
+              <select id="audit-edit-updates-pending"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>USB Restricted (Y/N)
+              <select id="audit-edit-usb-restricted"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Printer Config OK (Y/N)
+              <select id="audit-edit-printer-config"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Backup Verified (Y/N)
+              <select id="audit-edit-backup-verified"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+            </label>
+            <label>Risk Level
+              <select id="audit-edit-risk-level">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </label>
+            <label>Auditor Name
+              <input id="audit-edit-auditor-name" type="text" maxlength="80" />
+            </label>
+            <label class="full">Issues Found
+              <textarea id="audit-edit-issues" rows="3" maxlength="500"></textarea>
+            </label>
+            <label class="full">Action Taken
+              <textarea id="audit-edit-action-taken" rows="3" maxlength="500"></textarea>
+            </label>
+            <div class="actions full">
+              <button type="submit" class="secondary">Save Changes</button>
+              <button type="button" id="audit-edit-modal-cancel" class="ghost">Cancel</button>
+            </div>
+          </form>
+          <p id="audit-edit-status-msg" class="status" role="status"></p>
+        </div>
+      </section>
+
+      <section id="cleaning-page" class="page-section hidden">
+        <section class="panel">
+          <h2>System Cleaning Status (Monthly)</h2>
+          <div class="toolbar">
+            <label>Location
+              <select id="cleaning-location">
+                <option value="Site">Site</option>
+                <option value="HeadOffice">HeadOffice</option>
+                <option value="Factory">Factory</option>
+              </select>
+            </label>
+            <button type="button" id="refresh-cleaning" class="secondary">Refresh</button>
+          </div>
+          <p id="cleaning-status" class="status" role="status"></p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tag</th><th>Name</th><th>Type</th><th>Last Cleaned</th><th>Monthly Status</th><th>Action</th></tr>
+              </thead>
+              <tbody id="cleaning-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <datalist id="employee-name-list"></datalist>
+  <datalist id="employee-department-list"></datalist>
+  <datalist id="employee-work-site-list"></datalist>
+  <datalist id="employee-designation-list"></datalist>
+  <script src="script.js"></script>
+</body>
+</html>
