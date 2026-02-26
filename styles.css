@@ -39,6 +39,10 @@ body {
 
 .hero.compact { margin-bottom: 10px; }
 
+#auth-screen .hero {
+  text-align: center;
+}
+
 .brand-row {
   display: flex;
   gap: 12px;
