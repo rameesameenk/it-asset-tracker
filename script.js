@@ -6884,7 +6884,7 @@ companyLogo.addEventListener("click", () => {
 logoutBtn.addEventListener("click", () => {
   performLogout();
 });
-authLogoutBtn.addEventListener("click", performLogout);
+authLogoutBtn?.addEventListener("click", performLogout);
 companyLogoutBtn.addEventListener("click", performLogout);
 moduleLogoutBtn.addEventListener("click", performLogout);
 
@@ -7184,7 +7184,7 @@ scanInput.addEventListener("keydown", (event) => {
 });
 
 manualBackupBtn.addEventListener("click", () => triggerManualBackup("manual-tracker"));
-authBackupBtn.addEventListener("click", () => triggerManualBackup("manual-auth"));
+authBackupBtn?.addEventListener("click", () => triggerManualBackup("manual-auth"));
 companyBackupBtn.addEventListener("click", () => triggerManualBackup("manual-company"));
 moduleBackupBtn.addEventListener("click", () => triggerManualBackup("manual-module"));
 settingsBackupBtn.addEventListener("click", () => triggerManualBackup("manual-settings-header"));
