@@ -286,7 +286,6 @@
           <img id="company-logo" class="header-logo" alt="Company logo" />
           <div>
             <h1>IT Asset Tracker</h1>
-            <img id="session-avatar" class="session-avatar hidden" alt="User profile" />
             <p id="session-meta"></p>
           </div>
         </div>
@@ -305,7 +304,8 @@
           <button type="button" id="app-admin-settings-btn" class="ghost mini hidden">Settings</button>
           <button type="button" id="change-company" class="ghost">Change Company</button>
           <button type="button" id="app-admin-users-btn" class="ghost hidden">Admin User Management</button>
-          <button type="button" id="logout" class="danger push-right">Logout</button>
+          <button type="button" id="logout" class="danger">Logout</button>
+          <img id="session-avatar" class="session-avatar hidden push-right" alt="User profile" />
         </div>
       </header>
 
@@ -315,6 +315,9 @@
         <form id="admin-user-form" class="toolbar" autocomplete="off">
           <label>Username <input id="new-user-username" type="text" maxlength="40" required /></label>
           <label>Password <input id="new-user-password" type="password" maxlength="60" required /></label>
+          <label>Profile Photo
+            <input id="new-user-photo" type="file" accept="image/*" />
+          </label>
           <label>Role
             <select id="new-user-role">
               <option value="user">User</option>
@@ -323,6 +326,7 @@
           </label>
           <button type="submit" class="secondary">Add User</button>
         </form>
+        <input id="admin-user-photo-edit-input" type="file" accept="image/*" class="hidden" />
         <p id="admin-user-status" class="status" role="status"></p>
         <div class="table-wrap">
           <table>
@@ -333,6 +337,40 @@
           </table>
         </div>
         </section>
+      </section>
+
+      <section id="admin-user-edit-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card">
+          <div class="modal-head">
+            <h2>Edit User</h2>
+            <button type="button" id="admin-user-edit-close" class="ghost mini">Close</button>
+          </div>
+          <form id="admin-user-edit-form" class="grid-form" autocomplete="off">
+            <label>Username
+              <input id="admin-user-edit-username" type="text" maxlength="40" required />
+            </label>
+            <label>Password
+              <input id="admin-user-edit-password" type="password" maxlength="60" placeholder="Leave blank to keep current password" />
+            </label>
+            <label>Role
+              <select id="admin-user-edit-role">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </label>
+            <label>Profile Photo
+              <input id="admin-user-edit-photo" type="file" accept="image/*" />
+            </label>
+            <div class="full photo-preview-wrap">
+              <img id="admin-user-edit-photo-preview" class="admin-user-thumb" alt="User photo preview" hidden />
+            </div>
+            <div class="actions full">
+              <button type="submit" class="secondary">Save User</button>
+              <button type="button" id="admin-user-edit-cancel" class="ghost">Cancel</button>
+            </div>
+          </form>
+          <p id="admin-user-edit-status" class="status" role="status"></p>
+        </div>
       </section>
 
       <section id="activity-history-page" class="page-section hidden">

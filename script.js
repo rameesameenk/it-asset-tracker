@@ -227,6 +227,16 @@ const newUserRole = document.getElementById("new-user-role");
 const adminUserPhotoEditInput = document.getElementById("admin-user-photo-edit-input");
 const adminUserStatus = document.getElementById("admin-user-status");
 const adminUserTbody = document.getElementById("admin-user-tbody");
+const adminUserEditModal = document.getElementById("admin-user-edit-modal");
+const adminUserEditClose = document.getElementById("admin-user-edit-close");
+const adminUserEditCancel = document.getElementById("admin-user-edit-cancel");
+const adminUserEditForm = document.getElementById("admin-user-edit-form");
+const adminUserEditUsername = document.getElementById("admin-user-edit-username");
+const adminUserEditPassword = document.getElementById("admin-user-edit-password");
+const adminUserEditRole = document.getElementById("admin-user-edit-role");
+const adminUserEditPhoto = document.getElementById("admin-user-edit-photo");
+const adminUserEditPhotoPreview = document.getElementById("admin-user-edit-photo-preview");
+const adminUserEditStatus = document.getElementById("admin-user-edit-status");
 
 const catalogForm = document.getElementById("catalog-form");
 const catalogFormTitle = document.getElementById("catalog-form-title");
@@ -685,6 +695,8 @@ let cloudPushInFlight = false;
 let cloudPullInFlight = false;
 let cloudSyncSuspendLocalHooks = false;
 let cloudPullInterval = null;
+let editingAdminUserId = null;
+let editingAdminUserPhotoDataUrl = "";
 const AUDIT_YN_OPTIONS = ["", "Y", "N"];
 const AUDIT_RISK_OPTIONS = ["Low", "Medium", "High", "Critical"];
 const LIST_PAGE_SIZE_TARGETS = new Set([
@@ -1699,6 +1711,7 @@ function seedDefaultAdmin() {
     username: String(u.username || "").trim(),
     password: String(u.password || ""),
     role: u.role === "admin" ? "admin" : (String(u.username || "").trim().toLowerCase() === "ramees" ? "admin" : "user"),
+    profilePhoto: String(u.profilePhoto || ""),
     createdAt: u.createdAt || new Date().toISOString()
   })).filter((u) => u.username && u.password);
 
@@ -1708,6 +1721,7 @@ function seedDefaultAdmin() {
       username: "ramees",
       password: "IT@Admin",
       role: "admin",
+      profilePhoto: "",
       createdAt: new Date().toISOString()
     });
   }
@@ -2156,6 +2170,16 @@ function persistAssets() {
 
 function refreshHeader() {
   sessionMeta.textContent = `User: ${sessionUser || "-"} | Company: ${currentCompany || "-"} | Location: ${currentLocation || "-"}`;
+  const current = getCurrentUser();
+  if (sessionAvatar) {
+    if (current?.profilePhoto) {
+      sessionAvatar.hidden = false;
+      sessionAvatar.src = current.profilePhoto;
+    } else {
+      sessionAvatar.hidden = true;
+      sessionAvatar.removeAttribute("src");
+    }
+  }
   const logo = COMPANY_META[currentCompany]?.logo;
   if (logo) {
     companyLogo.hidden = false;
@@ -2989,10 +3013,14 @@ function renderUserTable() {
   adminUserTbody.innerHTML = rows.map((u) => {
     const editBtn = `<button type="button" class="ghost" data-action="edit-user" data-id="${u.id}">Edit</button>`;
     const promoteBtn = u.role === "admin"
-      ? "-"
+      ? ""
       : `<button type="button" class="secondary" data-action="promote-admin" data-id="${u.id}">Make Admin</button>`;
     const deleteBtn = `<button type="button" class="danger" data-action="delete-user" data-id="${u.id}">Delete</button>`;
+    const photoCell = u.profilePhoto
+      ? `<img class="admin-user-thumb" src="${u.profilePhoto}" alt="${escapeHtml(u.username)}" />`
+      : "";
     return `<tr>
+      <td>${photoCell}</td>
       <td>${escapeHtml(u.username)}</td>
       <td>${escapeHtml(u.role)}</td>
       <td><div class="row-actions">${editBtn} ${promoteBtn} ${deleteBtn}</div></td>
@@ -3000,7 +3028,7 @@ function renderUserTable() {
   }).join("");
 }
 
-function addUserByAdmin(event) {
+async function addUserByAdmin(event) {
   event.preventDefault();
   if (!isAdminUser()) {
     setStatus(adminUserStatus, "Only admins can manage users.", "err");
@@ -3016,12 +3044,22 @@ function addUserByAdmin(event) {
   if (users.some((u) => u.username.toLowerCase() === username.toLowerCase())) {
     return setStatus(adminUserStatus, "Username already exists.", "err");
   }
+  let profilePhoto = "";
+  if (newUserPhoto?.files?.[0]) {
+    try {
+      profilePhoto = await readCompressedImage(newUserPhoto.files[0]);
+    } catch (error) {
+      setStatus(adminUserStatus, error.message || "Failed to process user photo.", "err");
+      return;
+    }
+  }
 
   users.push({
     id: uid(),
     username,
     password,
     role,
+    profilePhoto,
     createdAt: new Date().toISOString()
   });
   saveJson(USERS_KEY, users);
@@ -3072,48 +3110,74 @@ function editUserByAdmin(id) {
   if (!isAdminUser()) return;
   const target = users.find((u) => u.id === id);
   if (!target) return;
+  editingAdminUserId = target.id;
+  editingAdminUserPhotoDataUrl = String(target.profilePhoto || "");
+  adminUserEditUsername.value = target.username;
+  adminUserEditPassword.value = "";
+  adminUserEditRole.value = target.role;
+  if (adminUserEditPhoto) adminUserEditPhoto.value = "";
+  if (editingAdminUserPhotoDataUrl) {
+    adminUserEditPhotoPreview.hidden = false;
+    adminUserEditPhotoPreview.src = editingAdminUserPhotoDataUrl;
+  } else {
+    adminUserEditPhotoPreview.hidden = true;
+    adminUserEditPhotoPreview.removeAttribute("src");
+  }
+  setStatus(adminUserEditStatus, "", "ok");
+  adminUserEditModal.classList.remove("hidden");
+  adminUserEditModal.setAttribute("aria-hidden", "false");
+}
 
-  const nextUsernameInput = window.prompt("Edit username:", target.username);
-  if (nextUsernameInput === null) return;
-  const nextUsername = nextUsernameInput.trim();
+function closeAdminUserEditModal() {
+  if (!adminUserEditModal) return;
+  adminUserEditModal.classList.add("hidden");
+  adminUserEditModal.setAttribute("aria-hidden", "true");
+  editingAdminUserId = null;
+  editingAdminUserPhotoDataUrl = "";
+}
+
+async function saveAdminUserEdit(event) {
+  event.preventDefault();
+  if (!isAdminUser()) return;
+  const target = users.find((u) => u.id === editingAdminUserId);
+  if (!target) return;
+  const nextUsername = String(adminUserEditUsername.value || "").trim();
   if (nextUsername.length < 3) {
-    setStatus(adminUserStatus, "Username must be at least 3 characters.", "err");
+    setStatus(adminUserEditStatus, "Username must be at least 3 characters.", "err");
     return;
   }
-  if (users.some((u) => u.id !== id && u.username.toLowerCase() === nextUsername.toLowerCase())) {
-    setStatus(adminUserStatus, "Username already exists.", "err");
+  if (users.some((u) => u.id !== target.id && u.username.toLowerCase() === nextUsername.toLowerCase())) {
+    setStatus(adminUserEditStatus, "Username already exists.", "err");
     return;
   }
-
-  const nextPasswordInput = window.prompt("Enter new password (leave blank to keep existing):", "");
-  if (nextPasswordInput === null) return;
-  const nextPassword = String(nextPasswordInput || "");
+  const nextPassword = String(adminUserEditPassword.value || "");
   if (nextPassword && nextPassword.length < 4) {
-    setStatus(adminUserStatus, "Password must be at least 4 characters.", "err");
+    setStatus(adminUserEditStatus, "Password must be at least 4 characters.", "err");
     return;
   }
-
-  const nextRoleInput = window.prompt("Role (admin/user):", target.role);
-  if (nextRoleInput === null) return;
-  const normalizedRole = String(nextRoleInput || "").trim().toLowerCase();
-  const nextRole = normalizedRole === "admin" ? "admin" : normalizedRole === "user" ? "user" : "";
-  if (!nextRole) {
-    setStatus(adminUserStatus, "Role must be admin or user.", "err");
-    return;
-  }
+  const nextRole = adminUserEditRole.value === "admin" ? "admin" : "user";
 
   const adminCount = users.filter((u) => u.role === "admin").length;
   if (target.role === "admin" && nextRole !== "admin" && adminCount <= 1) {
-    setStatus(adminUserStatus, "Cannot demote the last admin.", "err");
+    setStatus(adminUserEditStatus, "Cannot demote the last admin.", "err");
     return;
   }
+  if (adminUserEditPhoto?.files?.[0]) {
+    try {
+      editingAdminUserPhotoDataUrl = await readCompressedImage(adminUserEditPhoto.files[0]);
+    } catch (error) {
+      setStatus(adminUserEditStatus, error.message || "Failed to process user photo.", "err");
+      return;
+    }
+  }
 
-  users = users.map((u) => (u.id === id
+  users = users.map((u) => (u.id === target.id
     ? {
       ...u,
       username: nextUsername,
       password: nextPassword || u.password,
-      role: nextRole
+      role: nextRole,
+      profilePhoto: editingAdminUserPhotoDataUrl || ""
     }
     : u));
 
@@ -3128,6 +3192,8 @@ function editUserByAdmin(id) {
   triggerChangeBackup("users");
   logActivity("EDIT_USER", `${target.username} -> ${nextUsername} (${nextRole})`);
   renderUserTable();
+  closeAdminUserEditModal();
+  refreshHeader();
   setStatus(adminUserStatus, `Updated user ${nextUsername}.`, "ok");
 }
 
@@ -7464,6 +7530,25 @@ adminUserTbody.addEventListener("click", (event) => {
   }
   if (btn.dataset.action === "delete-user") {
     deleteUserByAdmin(btn.dataset.id);
+  }
+});
+adminUserEditForm?.addEventListener("submit", saveAdminUserEdit);
+adminUserEditClose?.addEventListener("click", closeAdminUserEditModal);
+adminUserEditCancel?.addEventListener("click", closeAdminUserEditModal);
+adminUserEditModal?.addEventListener("click", (event) => {
+  if (event.target === adminUserEditModal) closeAdminUserEditModal();
+});
+adminUserEditPhoto?.addEventListener("change", async () => {
+  const file = adminUserEditPhoto.files?.[0];
+  if (!file) return;
+  try {
+    editingAdminUserPhotoDataUrl = await readCompressedImage(file);
+    if (adminUserEditPhotoPreview) {
+      adminUserEditPhotoPreview.hidden = false;
+      adminUserEditPhotoPreview.src = editingAdminUserPhotoDataUrl;
+    }
+  } catch (error) {
+    setStatus(adminUserEditStatus, error.message || "Failed to process user photo.", "err");
   }
 });
 
