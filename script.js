@@ -214,6 +214,7 @@ const companyLogoutBtn = document.getElementById("company-logout");
 const moduleLogoutBtn = document.getElementById("module-logout");
 
 const sessionMeta = document.getElementById("session-meta");
+const sessionAvatar = document.getElementById("session-avatar");
 const companyLogo = document.getElementById("company-logo");
 const goModuleSelectorBtn = document.getElementById("go-module-selector");
 const changeCompanyBtn = document.getElementById("change-company");
@@ -221,7 +222,9 @@ const logoutBtn = document.getElementById("logout");
 const adminUserForm = document.getElementById("admin-user-form");
 const newUserUsername = document.getElementById("new-user-username");
 const newUserPassword = document.getElementById("new-user-password");
+const newUserPhoto = document.getElementById("new-user-photo");
 const newUserRole = document.getElementById("new-user-role");
+const adminUserPhotoEditInput = document.getElementById("admin-user-photo-edit-input");
 const adminUserStatus = document.getElementById("admin-user-status");
 const adminUserTbody = document.getElementById("admin-user-tbody");
 
@@ -1769,7 +1772,8 @@ function loadState() {
   audits = loadJson(AUDITS_KEY, []);
   cleaningRecords = loadJson(CLEANING_KEY, {});
   listPageSizes = loadListPageSizes();
-  sessionUser = localStorage.getItem(SESSION_KEY) || null;
+  sessionUser = sessionStorage.getItem(SESSION_KEY) || null;
+  localStorage.removeItem(SESSION_KEY);
   currentCompany = localStorage.getItem(COMPANY_KEY) || null;
   currentLocation = localStorage.getItem(LOCATION_KEY) || null;
   if (currentLocation && !getAllLocations().includes(currentLocation)) {
@@ -1817,6 +1821,7 @@ function hardResetAllData() {
     MODULE_KEY,
     USERS_KEY
   ].forEach((k) => localStorage.removeItem(k));
+  sessionStorage.removeItem(SESSION_KEY);
 
   users = [];
   seedDefaultAdmin();
@@ -2133,6 +2138,7 @@ function performLogout() {
     cloudPullInterval = null;
   }
   localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(COMPANY_KEY);
   localStorage.removeItem(LOCATION_KEY);
   if (userBefore) logActivity("LOGOUT", "User logged out", { user: userBefore, company: "", location: "" });
@@ -2981,6 +2987,7 @@ function renderUserTable() {
   const allRows = [...users].sort((a, b) => a.username.localeCompare(b.username));
   const { rows } = getPagedRows("admin-user-tbody", allRows);
   adminUserTbody.innerHTML = rows.map((u) => {
+    const editBtn = `<button type="button" class="ghost" data-action="edit-user" data-id="${u.id}">Edit</button>`;
     const promoteBtn = u.role === "admin"
       ? "-"
       : `<button type="button" class="secondary" data-action="promote-admin" data-id="${u.id}">Make Admin</button>`;
@@ -2988,7 +2995,7 @@ function renderUserTable() {
     return `<tr>
       <td>${escapeHtml(u.username)}</td>
       <td>${escapeHtml(u.role)}</td>
-      <td>${promoteBtn} ${deleteBtn}</td>
+      <td><div class="row-actions">${editBtn} ${promoteBtn} ${deleteBtn}</div></td>
     </tr>`;
   }).join("");
 }
@@ -3059,6 +3066,69 @@ function deleteUserByAdmin(id) {
   triggerChangeBackup("users");
   renderUserTable();
   setStatus(adminUserStatus, `Deleted user ${target.username}.`, "ok");
+}
+
+function editUserByAdmin(id) {
+  if (!isAdminUser()) return;
+  const target = users.find((u) => u.id === id);
+  if (!target) return;
+
+  const nextUsernameInput = window.prompt("Edit username:", target.username);
+  if (nextUsernameInput === null) return;
+  const nextUsername = nextUsernameInput.trim();
+  if (nextUsername.length < 3) {
+    setStatus(adminUserStatus, "Username must be at least 3 characters.", "err");
+    return;
+  }
+  if (users.some((u) => u.id !== id && u.username.toLowerCase() === nextUsername.toLowerCase())) {
+    setStatus(adminUserStatus, "Username already exists.", "err");
+    return;
+  }
+
+  const nextPasswordInput = window.prompt("Enter new password (leave blank to keep existing):", "");
+  if (nextPasswordInput === null) return;
+  const nextPassword = String(nextPasswordInput || "");
+  if (nextPassword && nextPassword.length < 4) {
+    setStatus(adminUserStatus, "Password must be at least 4 characters.", "err");
+    return;
+  }
+
+  const nextRoleInput = window.prompt("Role (admin/user):", target.role);
+  if (nextRoleInput === null) return;
+  const normalizedRole = String(nextRoleInput || "").trim().toLowerCase();
+  const nextRole = normalizedRole === "admin" ? "admin" : normalizedRole === "user" ? "user" : "";
+  if (!nextRole) {
+    setStatus(adminUserStatus, "Role must be admin or user.", "err");
+    return;
+  }
+
+  const adminCount = users.filter((u) => u.role === "admin").length;
+  if (target.role === "admin" && nextRole !== "admin" && adminCount <= 1) {
+    setStatus(adminUserStatus, "Cannot demote the last admin.", "err");
+    return;
+  }
+
+  users = users.map((u) => (u.id === id
+    ? {
+      ...u,
+      username: nextUsername,
+      password: nextPassword || u.password,
+      role: nextRole
+    }
+    : u));
+
+  if (target.username === sessionUser && nextUsername !== target.username) {
+    sessionUser = nextUsername;
+    sessionStorage.setItem(SESSION_KEY, sessionUser);
+    localStorage.removeItem(SESSION_KEY);
+    refreshHeader();
+  }
+
+  saveJson(USERS_KEY, users);
+  triggerChangeBackup("users");
+  logActivity("EDIT_USER", `${target.username} -> ${nextUsername} (${nextRole})`);
+  renderUserTable();
+  setStatus(adminUserStatus, `Updated user ${nextUsername}.`, "ok");
 }
 
 function verifyLoginPassword(password) {
@@ -6689,7 +6759,8 @@ loginForm.addEventListener("submit", (event) => {
   if (!user) return setStatus(authStatus, "Invalid username or password.", "err");
 
   sessionUser = username;
-  localStorage.setItem(SESSION_KEY, username);
+  sessionStorage.setItem(SESSION_KEY, username);
+  localStorage.removeItem(SESSION_KEY);
   logActivity("LOGIN", "User login successful", { user: username, company: currentCompany || "", location: currentLocation || "" });
   setStatus(authStatus, "Login successful.", "ok");
   route();
@@ -7383,6 +7454,10 @@ adminUserForm.addEventListener("submit", addUserByAdmin);
 adminUserTbody.addEventListener("click", (event) => {
   const btn = event.target.closest("button[data-action]");
   if (!btn) return;
+  if (btn.dataset.action === "edit-user") {
+    editUserByAdmin(btn.dataset.id);
+    return;
+  }
   if (btn.dataset.action === "promote-admin") {
     promoteUserToAdmin(btn.dataset.id);
     return;
