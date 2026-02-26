@@ -71,6 +71,30 @@ body {
   margin-left: auto;
 }
 
+.session-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid #d8e0e7;
+  background: #fff;
+}
+
+.admin-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-user-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #b8c5d2;
+  background: #fff;
+}
+
 .panel {
   margin-top: 18px;
   background: var(--panel);
@@ -164,6 +188,13 @@ button:hover { background: var(--brand-dark); }
 .status.ok { color: var(--ok); }
 .status.err { color: var(--warn); }
 .muted { color: var(--muted); }
+
+#employee-csv-headers-hint,
+#catalog-page .panel .muted {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 
 .auth-grid {
   display: grid;
@@ -588,6 +619,7 @@ svg {
   .panel {
     padding: 12px;
     border-radius: 12px;
+    overflow: hidden;
   }
 
   input,
@@ -654,6 +686,12 @@ svg {
   .barcode-preview {
     padding: 8px;
     min-height: 110px;
+  }
+
+  #employee-csv-headers-hint,
+  #catalog-page .panel .muted {
+    font-size: 0.88rem;
+    line-height: 1.35;
   }
 
 }
